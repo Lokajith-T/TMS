@@ -18,6 +18,7 @@ lib/
 lib64/
 parts/
 sdist/
+.vite/
 var/
 wheels/
 share/python-wheels/
@@ -136,6 +137,7 @@ celerybeat.pid
 
 # Environments
 .env
+backend/.env
 .envrc
 .venv
 env/
@@ -143,6 +145,10 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Database
+*.db
+*.sqlite3
 
 # Spyder project settings
 .spyderproject
