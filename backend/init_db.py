@@ -1,6 +1,6 @@
-from app.database import SessionLocal, engine, Base
-from app.models import User
-from app.auth import hash_password
+from app.db.database import SessionLocal, engine, Base
+from app.models.user import User
+from app.core.auth import hash_password
 
 def init_db():
     print("Initializing database...")

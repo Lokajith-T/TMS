@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { loginUser } from '../api/api';
 
 /**
  * LoginPage Component
@@ -16,13 +17,7 @@ const LoginPage = ({ onLoginSuccess }) => {
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await loginUser(email, password);
 
       const data = await response.json();
 
@@ -50,24 +45,6 @@ const LoginPage = ({ onLoginSuccess }) => {
     }
   };
 
-  // 🔐 Protected API call example
-  const getUser = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      const res = await fetch("/api/user/me", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await res.json();
-      console.log("Current User:", data);
-    } catch (err) {
-      console.error("Error fetching user:", err);
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#1c1c1c] transition-colors duration-300 p-4 font-sans">
