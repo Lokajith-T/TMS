@@ -1,9 +1,12 @@
 import os
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env from project root
+env_path = Path(__file__).resolve().parent.parent.parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key-for-dev")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
