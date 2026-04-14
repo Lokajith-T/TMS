@@ -19,7 +19,13 @@ const LoginPage = ({ onLoginSuccess }) => {
     try {
       const response = await loginUser(email, password);
 
-      const data = await response.json();
+      // Check if the response is valid JSON
+      const contentType = response.headers.get("content-type");
+      let data = {};
+      
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      }
 
       if (response.ok) {
         // ✅ Store token
@@ -32,14 +38,15 @@ const LoginPage = ({ onLoginSuccess }) => {
         
         console.log('Login successful', data);
       } else {
-        // Handle error message from API
-        setError(data.detail || 'Invalid email or password. Please try again.');
-        alert(data.detail || "Login failed");
+        // Handle error message from API or server error
+        const errorMessage = data.detail || (response.status === 502 ? 'Server is offline (Bad Gateway)' : 'Login failed');
+        setError(errorMessage);
+        console.error('Login failed:', errorMessage);
       }
     } catch (err) {
       // Handle network or unexpected errors
-      setError('Connection failed. Please check your network and try again.');
-      console.error('Login error:', err);
+      setError('Connection failed. Please ensure the backend server is running.');
+      console.error('Network error:', err);
     } finally {
       setIsLoading(false);
     }
