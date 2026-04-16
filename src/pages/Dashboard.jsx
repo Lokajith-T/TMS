@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
-const NODE_W = 196;
-const NODE_H = 86;
-const H_GAP = 90;
-const V_GAP = 164;
+const NODE_W = 120;
+
+const NODE_H = 64;
+const H_GAP = 60;
+const V_GAP = 120;
 const ROOT_GAP = 180;
 const WORLD_W = 3400;
 const WORLD_H = 2200;
+
 const MIN_SCALE = 0.52;
 const MAX_SCALE = 1.45;
 const SNAP_RADIUS = 128;
@@ -14,52 +16,174 @@ const DRAG_START_THRESHOLD_PX = 8;
 const TOP_OFFSET = 152;
 
 const INITIAL_GRAPH = {
-  JP: { id: 'JP', name: 'admin', parentId: null, childrenIds: ['AK', 'SR', 'KP', 'DW'], position: { x: 0, y: 0 }, collapsed: false, role: 'Admin', team: 'Operations', workload: 8, status: 'Organization owner' },
-  AK: { id: 'AK', name: 'arun', parentId: 'JP', childrenIds: ['RC', 'TC'], position: { x: 0, y: 0 }, collapsed: false, role: 'Lead', team: 'Engineering', workload: 6, status: 'Managing engineering pod A' },
-  SR: { id: 'SR', name: 'kavi', parentId: 'JP', childrenIds: ['MN', 'ED'], position: { x: 0, y: 0 }, collapsed: false, role: 'Lead', team: 'Engineering', workload: 7, status: 'Managing engineering pod B' },
-  RC: { id: 'RC', name: 'sara', parentId: 'AK', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 4, status: 'Task execution' },
-  TC: { id: 'TC', name: 'mani', parentId: 'AK', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 3, status: 'Task execution' },
-  MN: { id: 'MN', name: 'ravi', parentId: 'SR', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 5, status: 'Feature delivery' },
-  ED: { id: 'ED', name: 'vijay', parentId: 'SR', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 4, status: 'Platform support' },
-  KP: { id: 'KP', name: 'ajay', parentId: 'JP', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Operations', workload: 6, status: 'General support' },
-  DW: { id: 'DW', name: 'deepa', parentId: 'JP', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Operations', workload: 6, status: 'General support' },
+  JP: { id: 'JP', name: 'admin', parentId: null, childrenIds: ['AK', 'SR', 'KP', 'DW'], position: { x: 0, y: 0 }, collapsed: false, role: 'Admin', team: 'Operations', workload: 8, status: 'Organization owner', presence: 'available', skills: ['Strategy', 'Logistics', 'Leadership'], tasks: [{ id: 1, title: 'Strategic Planning', status: 'In Progress', start: 10, duration: 60, progress: 45 }, { id: 2, title: 'Budget Approval', status: 'To Do', start: 40, duration: 30, progress: 0 }] },
+  AK: { id: 'AK', name: 'arun', parentId: 'JP', childrenIds: ['RC', 'TC'], position: { x: 0, y: 0 }, collapsed: false, role: 'Lead', team: 'Engineering', workload: 6, status: 'Managing engineering pod A', presence: 'away', skills: ['Architecture', 'Backend', 'Go'], tasks: [{ id: 3, title: 'Microservices Mesh', status: 'In Progress', start: 20, duration: 70, progress: 30 }, { id: 4, title: 'Onboarding docs', status: 'Done', start: 0, duration: 40, progress: 100 }] },
+  SR: { id: 'SR', name: 'kavi', parentId: 'JP', childrenIds: ['MN', 'ED'], position: { x: 0, y: 0 }, collapsed: false, role: 'Lead', team: 'Engineering', workload: 7, status: 'Managing engineering pod B', presence: 'offline', skills: ['React', 'UI/UX', 'Figma'], tasks: [{ id: 5, title: 'Frontend Refactor', status: 'Pending', start: 50, duration: 40, progress: 10 }] },
+  RC: { id: 'RC', name: 'sara', parentId: 'AK', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 4, status: 'Task execution', presence: 'available', skills: ['CSS', 'Unit Testing', 'Tailwind'], tasks: [{ id: 6, title: 'Component Library', status: 'To Do', start: 30, duration: 50, progress: 0 }] },
+  TC: { id: 'TC', name: 'mani', parentId: 'AK', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 3, status: 'Task execution', presence: 'available', skills: ['Automation', 'PostgreSQL', 'Python'], tasks: [{ id: 7, title: 'Unit Tests', status: 'Done', start: 0, duration: 100, progress: 100 }] },
+  MN: { id: 'MN', name: 'ravi', parentId: 'SR', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 5, status: 'Feature delivery', presence: 'away', skills: ['REST APIs', 'Spring Boot', 'Java'], tasks: [{ id: 8, title: 'API Integration', status: 'In Progress', start: 15, duration: 65, progress: 20 }] },
+  ED: { id: 'ED', name: 'vijay', parentId: 'SR', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 4, status: 'Platform support', presence: 'available', skills: ['Cloud Infrastructure', 'AWS', 'Docker'], tasks: [{ id: 9, title: 'Logging System', status: 'Pending', start: 60, duration: 30, progress: 5 }] },
+  KP: { id: 'KP', name: 'ajay', parentId: 'JP', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Operations', workload: 6, status: 'General support', presence: 'available', skills: ['Finance', 'Procurement', 'Excel'], tasks: [{ id: 10, title: 'Asset Audit', status: 'Done', start: 0, duration: 90, progress: 100 }] },
+  DW: { id: 'DW', name: 'deepa', parentId: 'JP', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Operations', workload: 6, status: 'General support', presence: 'offline', skills: ['HR', 'Event Planning', 'Compliance'], tasks: [{ id: 11, title: 'Logistics Sync', status: 'To Do', start: 70, duration: 25, progress: 0 }] },
 };
 
 const TEAM_PILLS = ['UI/UX', 'Engineering', 'Marketing', 'QA', 'Product', 'Operations'];
 
 const STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .org-editor {
-  --bg: #fafafa;
-  --surface: #ffffff;
-  --border: #e4e4e7;
-  --text: #18181b;
-  --text-2: #71717a;
-  --line: color-mix(in srgb, var(--text-2) 30%, transparent);
-  --soft: color-mix(in srgb, var(--text-2) 10%, transparent);
-  --shadow: 0 14px 32px color-mix(in srgb, var(--text) 11%, transparent);
-  --shadow-strong: 0 24px 52px color-mix(in srgb, var(--text) 20%, transparent);
+  --bg: #ffffff;
+  --surface: #f8f9fb;
+  --border: #eeeeee;
+  --text: #111111;
+  --text-2: #666666;
+  --accent: #4a7c7c;
+  --line: #e2e8f0;
+  --soft: #f1f5f9;
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  --shadow-strong: 0 4px 20px rgba(0, 0, 0, 0.06);
 
   width: 100vw;
   height: 100vh;
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Poppins', 'Segoe UI', sans-serif;
-  transition: background 220ms ease, color 220ms ease;
+  font-family: 'Inter', -apple-system, sans-serif;
+  transition: background 200ms ease, color: 200ms ease;
 }
 
 .org-editor[data-theme='dark'] {
-  --bg: #111111;
-  --surface: #1c1c1c;
-  --border: #333333;
-  --text: #ffffff;
+  --bg: #09090b;
+  --surface: #18181b;
+  --border: #27272a;
+  --text: #fafafa;
   --text-2: #a1a1aa;
-  --line: color-mix(in srgb, var(--text-2) 36%, transparent);
-  --soft: color-mix(in srgb, var(--text-2) 12%, transparent);
-  --shadow: 0 14px 36px color-mix(in srgb, #000000 46%, transparent);
-  --shadow-strong: 0 28px 62px color-mix(in srgb, #000000 62%, transparent);
+  --accent: #5e9292;
+  --line: #27272a;
+  --soft: #18181b;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-strong: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.department-cluster {
+  position: absolute;
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--accent) 15%, transparent);
+  border-radius: 24px;
+  pointer-events: none;
+  transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+}
+
+.cluster-label {
+  position: absolute;
+  top: -28px;
+  left: 20px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  opacity: 0.5;
+}
+
+.skill-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--soft));
+  border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
+  border-radius: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-right: 6px;
+  margin-bottom: 6px;
+  transition: all 150ms ease;
+}
+
+.skill-tag:hover {
+  background: color-mix(in srgb, var(--accent) 12%, var(--soft));
+  transform: translateY(-1px);
+}
+
+
+.search-container {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 100;
+  width: 280px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  transition: all 200ms ease;
+}
+
+.search-input-wrapper:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.search-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-2);
+  margin-right: 8px;
+}
+
+.search-input {
+  width: 100%;
+  height: 40px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  outline: none;
+}
+
+.search-results {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.search-result-item {
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: background 150ms ease;
+}
+
+.search-result-item:hover {
+  background: var(--soft);
+}
+
+.search-result-item .meta {
+  font-size: 0.65rem;
+  color: var(--text-2);
 }
 
 .org-shell {
@@ -78,6 +202,8 @@ const STYLES = `
   border-bottom: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface) 86%, transparent);
   backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1000;
 }
 
 .org-brand {
@@ -99,7 +225,109 @@ const STYLES = `
 .org-actions {
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+
+.notif-bell {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 150ms ease;
+  color: var(--text-2);
+}
+
+.notif-bell:hover {
+  background: var(--soft);
+  color: var(--text);
+}
+
+.notif-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 1px solid var(--bg);
+}
+
+.comment-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.comment-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.comment-item {
+  display: flex;
+  gap: 12px;
+}
+
+.comment-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.comment-content {
+  flex: 1;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.comment-author {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.comment-time {
+  font-size: 0.65rem;
+  color: var(--text-2);
+}
+
+.comment-text {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.comment-input-wrap {
+  margin-top: 20px;
+  display: flex;
   gap: 8px;
+}
+
+.comment-input {
+  flex: 1;
+  background: var(--soft);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  color: var(--text);
+  outline: none;
 }
 
 .org-btn,
@@ -108,138 +336,90 @@ const STYLES = `
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
-  border-radius: 999px;
+  border-radius: 6px;
   font: inherit;
   cursor: pointer;
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  transition: border-color 160ms ease, background 160ms ease;
 }
 
 .org-icon-btn {
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .org-btn,
 .org-btn-ghost {
-  padding: 8px 13px;
-  font-size: 0.8rem;
-  font-weight: 700;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .org-btn:hover,
 .org-btn-ghost:hover,
 .org-icon-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow);
+  border-color: var(--text-2);
+  background: var(--soft);
 }
 
 .org-main {
-  display: grid;
-  grid-template-columns: 272px 1fr;
-  align-items: stretch;
-  gap: 14px;
+  display: flex;
+  flex-direction: column;
   padding: 14px;
   min-height: 0;
 }
 
-.org-panel {
-  margin: 0;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  box-shadow: var(--shadow);
-  padding: 16px;
-  display: grid;
-  gap: 14px;
-  align-self: stretch;
-  min-height: 0;
-}
-
-.panel-title {
-  font-size: 1rem;
-  font-weight: 800;
-}
-
-.panel-copy {
-  font-size: 0.78rem;
-  color: var(--text-2);
-  line-height: 1.4;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.toolbar {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
-}
-
-.stat-card {
+  padding: 6px;
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 10px 8px;
-  text-align: center;
+  border-radius: 8px;
+  background: var(--surface);
+  z-index: 40;
 }
 
-.stat-card strong {
-  display: block;
-  font-size: 1.02rem;
-}
-
-.stat-card span {
-  font-size: 0.66rem;
-  color: var(--text-2);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.pill-wrap {
+.toolbar-btn {
+  width: 32px;
+  height: 32px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.team-pill {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 10px 12px;
-  font-size: 0.74rem;
+  place-items: center;
+  border: none;
+  background: transparent;
   color: var(--text-2);
-  background: color-mix(in srgb, var(--surface) 90%, var(--bg));
-  text-align: center;
-  font-weight: 600;
+  border-radius: 8px;
   cursor: pointer;
-  transition: transform 140ms ease, border-color 140ms ease, color 140ms ease, background 140ms ease;
+  transition: background 140ms ease, color 140ms ease;
 }
 
-.team-pill:hover {
-  transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--text) 24%, var(--border));
-}
-
-.team-pill.active {
+.toolbar-btn:hover {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
   color: var(--text);
-  border-color: color-mix(in srgb, var(--text) 34%, var(--border));
-  background: color-mix(in srgb, var(--surface) 68%, var(--soft));
 }
 
-.panel-actions {
-  display: grid;
-  gap: 8px;
-}
-
-.panel-actions .org-btn,
-.panel-actions .org-btn-ghost {
-  border-radius: 12px;
-  width: 100%;
-  text-align: left;
+.toolbar-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .canvas-wrap {
   position: relative;
   min-width: 0;
   overflow: hidden;
+  flex: 1;
 }
 
 .canvas {
@@ -249,7 +429,7 @@ const STYLES = `
   touch-action: none;
   user-select: none;
   cursor: grab;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, var(--bg)) 0%, var(--bg) 100%);
+  background: var(--bg);
 }
 
 .canvas:active {
@@ -275,23 +455,36 @@ const STYLES = `
 .edge {
   fill: none;
   stroke: var(--line);
-  stroke-width: 1.8;
+  stroke-width: 1.2;
   stroke-linecap: round;
+  transition: opacity 250ms ease, d 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.edge.active {
-  stroke-width: 2.25;
+.edge-pulse {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-dasharray: 2 48;
+  animation: flowPulse 4s linear infinite;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+@keyframes flowPulse {
+  from { stroke-dashoffset: 50; }
+  to { stroke-dashoffset: 0; }
 }
 
 .edge.preview {
   stroke: var(--text);
-  stroke-width: 2.35;
-  stroke-dasharray: 9 8;
-  animation: edgeDash 0.95s linear infinite;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 6;
+  animation: edgeDash 0.8s linear infinite;
 }
 
 @keyframes edgeDash {
-  to { stroke-dashoffset: -17; }
+  to { stroke-dashoffset: -12; }
 }
 
 .branch-hit {
@@ -303,136 +496,353 @@ const STYLES = `
   z-index: 1;
 }
 
-.branch-hit.selected {
-  border-color: color-mix(in srgb, var(--text-2) 46%, transparent);
-  background: color-mix(in srgb, var(--text-2) 8%, transparent);
-}
-
 .node {
   position: absolute;
   width: ${NODE_W}px;
   height: ${NODE_H}px;
   border: 1px solid var(--border);
-  border-radius: 22px;
+  border-radius: 10px;
   background: var(--surface);
   box-shadow: var(--shadow);
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 34px 1fr;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease, opacity 170ms ease, background 170ms ease, left 320ms cubic-bezier(0.22, 1, 0.36, 1), top 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  gap: 8px;
+  padding: 6px 12px;
+  transition: border-color 170ms ease, box-shadow 170ms ease, opacity 170ms ease, left 320ms cubic-bezier(0.22, 1, 0.36, 1), top 320ms cubic-bezier(0.22, 1, 0.36, 1);
   z-index: 3;
+  cursor: pointer;
+}
+
+.node::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  transition: border-color 300ms ease, box-shadow 300ms ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Health Rings mapping */
+.node.health-low::after { border-color: #22c55e44; }
+.node.health-medium::after { border-color: #f59e0b44; }
+.node.health-high::after { border-color: #ef444444; }
+
+.node:active {
+  cursor: move;
 }
 
 .node:hover {
-  transform: translateY(-3px) scale(1.02);
+  border-color: var(--text-2);
   box-shadow: var(--shadow-strong);
 }
 
 .node.selected {
-  border-color: color-mix(in srgb, var(--text) 24%, var(--border));
-  box-shadow: var(--shadow-strong);
-  background: color-mix(in srgb, var(--surface) 90%, var(--soft));
-}
-
-.node.dimmed {
-  opacity: 0.22;
+  border-color: var(--accent);
+  border-width: 2px;
 }
 
 .node.dragging {
-  opacity: 0.56;
-  transform: translateY(-10px) scale(1.05);
+  opacity: 0.6;
 }
 
 .node.drop-target {
-  border-color: color-mix(in srgb, var(--text) 55%, var(--border));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text) 12%, transparent), var(--shadow-strong);
+  border-color: var(--accent);
+  background: var(--soft);
+}
+
+.node-port {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: crosshair;
+  z-index: 10;
+  transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
+}
+
+.node-port:hover {
+  transform: translateX(-50%) scale(1.3);
+  background: var(--text);
+  border-color: var(--text);
+}
+
+.node-port.top {
+  top: -7px;
+}
+
+.node-port.bottom {
+  bottom: -7px;
+}
+
+.node:hover {
+  border-color: var(--text-2);
+}
+
+.node.selected {
+  border-color: var(--accent);
+}
+
+.node.dimmed {
+  opacity: 0.15;
+}
+
+.node.hidden {
+  opacity: 0 !important;
+  pointer-events: none;
 }
 
 .avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 999px;
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
   border: 1px solid var(--border);
-  background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--text) 10%, var(--surface)), color-mix(in srgb, var(--text-2) 12%, var(--surface)) 70%);
-  display: grid;
-  place-items: center;
-  font-size: 1.1rem;
-  font-weight: 800;
+  z-index: 2;
 }
 
 .avatar-shell {
   position: relative;
-  width: 64px;
-  height: 64px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+}
+
+.avatar-halo {
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  transition: border-color 400ms ease, box-shadow 400ms ease;
+  z-index: 1;
+}
+
+.avatar-halo.available {
+  border-color: #22c55e66;
+  box-shadow: 0 0 10px #22c55e33;
+}
+.avatar-halo.away {
+  border-color: #f59e0b66;
+  box-shadow: 0 0 10px #f59e0b33;
+}
+.avatar-halo.offline {
+  border-color: #ef444466;
+  box-shadow: 0 0 10px #ef444433;
+}
+
+.avatar-halo::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid inherit;
+  opacity: 0.3;
+  animation: haloPulse 2.5s ease-out infinite;
+}
+
+@keyframes haloPulse {
+  0% { transform: scale(1); opacity: 0.4; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+.collapse-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 0.55rem;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
 }
 
 .meta {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   min-width: 0;
 }
 
 .meta .name {
-  font-size: 0.94rem;
-  font-weight: 800;
-  line-height: 1.08;
-}
-
-.meta .role {
   font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-2);
-  font-weight: 700;
-}
-
-.meta .team {
-  font-size: 0.72rem;
-  color: var(--text-2);
+  font-weight: 600;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.meta .role {
+  font-size: 0.58rem;
+  color: var(--text-2);
+}
+
+.meta .team {
+  display: none;
+}
+
 .drag-hint {
   position: absolute;
-  border: 1px solid color-mix(in srgb, var(--text) 30%, var(--border));
+  border: 1px solid var(--accent);
   background: var(--surface);
-  color: var(--text);
-  border-radius: 999px;
-  padding: 7px 10px;
-  font-size: 0.74rem;
-  font-weight: 700;
-  box-shadow: var(--shadow);
+  color: var(--accent);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.65rem;
+  font-weight: 600;
   pointer-events: none;
   z-index: 30;
 }
 
 .detail-panel {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  width: min(360px, calc(100% - 32px));
+  top: 12px;
+  right: 12px;
+  width: 340px;
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 12px;
   background: var(--surface);
-  box-shadow: var(--shadow-strong);
-  padding: 14px;
+  padding: 20px;
   z-index: 35;
+  box-shadow: var(--shadow);
 }
 
-.detail-head {
+.task-list {
+  margin-top: 24px;
+}
+
+.task-item {
   display: flex;
-  align-items: start;
+  align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
 }
 
-.detail-name {
-  font-size: 1rem;
+.task-item:last-child {
+  border-bottom: none;
+}
+
+.task-info {
+  display: grid;
+  gap: 2px;
+}
+
+.task-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.task-status-pill {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--text-2);
+  text-transform: uppercase;
+  border: none;
+  cursor: default;
+}
+
+.task-status-pill.editable {
+  cursor: pointer;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent);
+  transition: background 150ms ease;
+}
+
+.task-status-pill.editable:hover {
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+}
+
+.status-select {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   font-weight: 800;
+  cursor: pointer;
+  outline: none;
+}
+
+.gantt-mini-wrap {
+  margin-top: 8px;
+  width: 100%;
+}
+
+.gantt-track {
+  height: 4px;
+  background: var(--soft);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.gantt-bar {
+  position: absolute;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  opacity: 0.3;
+}
+
+.gantt-progress {
+  position: absolute;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.gantt-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 0.6rem;
+  color: var(--text-2);
+}
+
+.capacity-bin {
+  margin-top: 20px;
+}
+
+.capacity-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  margin-bottom: 6px;
+  color: var(--text-2);
+}
+
+.capacity-track {
+  height: 6px;
+  background: var(--soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.capacity-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 400ms ease;
 }
 
 .detail-sub {
@@ -450,121 +860,127 @@ const STYLES = `
 
 .detail-pill {
   border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 7px 10px;
-  font-size: 0.74rem;
+.detail-pill {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.65rem;
   color: var(--text-2);
 }
 
 .detail-pill strong {
   color: var(--text);
+  font-weight: 500;
 }
 
 .detail-actions {
-  margin-top: 12px;
+  margin-top: 16px;
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
 }
 
 .detail-list {
-  margin-top: 10px;
-  font-size: 0.78rem;
+  margin-top: 12px;
+  font-size: 0.7rem;
   color: var(--text-2);
-}
-
-.zoom-pill {
-  position: absolute;
-  left: 16px;
-  bottom: 16px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--text-2);
-  font-size: 0.76rem;
-  padding: 9px 11px;
-  box-shadow: var(--shadow);
-  z-index: 25;
 }
 
 .mini-map {
   position: absolute;
-  right: 16px;
-  bottom: 16px;
-  width: 210px;
-  height: 142px;
+  right: 12px;
+  bottom: 12px;
+  width: 180px;
+  height: 120px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 8px;
   background: var(--surface);
-  box-shadow: var(--shadow);
   overflow: hidden;
   z-index: 24;
 }
 
 .mini-top {
-  height: 24px;
+  height: 20px;
   border-bottom: 1px solid var(--border);
+  background: var(--soft);
 }
 
 .mini-body {
   position: relative;
-  height: calc(100% - 24px);
+  height: 100px;
 }
 
 .mini-node {
   position: absolute;
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--text) 38%, var(--surface));
+  width: 4px;
+  height: 4px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--text) 20%, var(--surface));
 }
 
 .mini-viewport {
   position: absolute;
-  border: 1px solid color-mix(in srgb, var(--text) 58%, transparent);
-  background: color-mix(in srgb, var(--text) 12%, transparent);
-  border-radius: 8px;
+  border: 1px solid var(--text-2);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
 }
 
 .modal-overlay {
-  position: absolute;
-  inset: 0;
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  display: grid;
-  place-items: center;
-  z-index: 45;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
 }
 
 .modal-card {
-  width: min(460px, calc(100% - 28px));
-  border: 1px solid var(--border);
-  border-radius: 20px;
+  width: 440px;
   background: var(--surface);
-  box-shadow: var(--shadow-strong);
-  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  animation: modalScaleUp 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: auto;
+}
+
+@keyframes modalScaleUp {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .modal-title {
-  font-size: 1rem;
-  font-weight: 800;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
 }
 
 .modal-sub {
-  margin-top: 4px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--text-2);
+  margin-bottom: 24px;
 }
 
 .modal-grid {
-  margin-top: 12px;
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .modal-label {
-  display: grid;
-  gap: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   font-size: 0.75rem;
+  font-weight: 600;
   color: var(--text-2);
 }
 
@@ -572,54 +988,50 @@ const STYLES = `
 .modal-select,
 .modal-textarea {
   width: 100%;
+  background: var(--soft);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 0.85rem;
   color: var(--text);
-  font: inherit;
-  padding: 9px 11px;
+  outline: none;
+  transition: border-color 200ms ease;
+  box-sizing: border-box;
+}
+
+.modal-input:focus,
+.modal-select:focus,
+.modal-textarea:focus {
+  border-color: var(--accent);
 }
 
 .modal-textarea {
-  min-height: 86px;
-  resize: vertical;
+  height: 90px;
+  resize: none;
 }
 
 .modal-actions {
-  margin-top: 12px;
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 12px;
 }
 
 .toast {
   position: absolute;
   left: 50%;
-  bottom: 18px;
+  bottom: 24px;
   transform: translateX(-50%);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 6px;
   background: var(--surface);
   color: var(--text);
-  font-size: 0.78rem;
-  padding: 9px 13px;
-  box-shadow: var(--shadow);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 8px 16px;
   z-index: 50;
 }
 
-@media (max-width: 1100px) {
-  .org-main {
-    grid-template-columns: 1fr;
-  }
-
-  .org-panel {
-    position: absolute;
-    left: 14px;
-    top: 82px;
-    width: 236px;
-    z-index: 20;
-  }
-}
 `;
 
 const cloneGraph = (graph) => JSON.parse(JSON.stringify(graph));
@@ -694,21 +1106,42 @@ const layoutGraph = (graph) => {
   let cursorX = Math.max(120, (WORLD_W - totalWidth) / 2);
   const positions = {};
 
-  const place = (id, depth, startX) => {
+  const place = (id, depth, startX, hiddenByParentId = null) => {
+    if (hiddenByParentId) {
+      if (positions[hiddenByParentId]) {
+        positions[id] = { ...positions[hiddenByParentId] };
+      } else {
+        positions[id] = { x: startX, y: TOP_OFFSET + depth * V_GAP };
+      }
+      next[id].hidden = true;
+      const actualChildren = childrenMap.get(id) || [];
+      actualChildren.forEach((childId) => {
+        place(childId, depth + 1, 0, hiddenByParentId);
+      });
+      return;
+    }
+
     const width = measure(id);
     positions[id] = {
       x: startX + (width - NODE_W) / 2,
       y: TOP_OFFSET + depth * V_GAP,
     };
-    const children = next[id].collapsed ? [] : (childrenMap.get(id) || []);
-    if (!children.length) {
-      return;
+    next[id].hidden = false;
+
+    const actualChildren = childrenMap.get(id) || [];
+    if (next[id].collapsed) {
+      next[id].hiddenCount = getDescendants(childrenMap, id).size;
+      actualChildren.forEach((childId) => {
+        place(childId, depth + 1, 0, id);
+      });
+    } else {
+      next[id].hiddenCount = 0;
+      let childCursor = startX;
+      actualChildren.forEach((childId, index) => {
+        place(childId, depth + 1, childCursor);
+        childCursor += measure(childId) + (index < actualChildren.length - 1 ? H_GAP : 0);
+      });
     }
-    let childCursor = startX;
-    children.forEach((childId, index) => {
-      place(childId, depth + 1, childCursor);
-      childCursor += measure(childId) + (index < children.length - 1 ? H_GAP : 0);
-    });
   };
 
   roots.forEach((rootId, index) => {
@@ -717,7 +1150,9 @@ const layoutGraph = (graph) => {
   });
 
   Object.entries(positions).forEach(([id, position]) => {
-    next[id].position = position;
+    if (!next[id].manualPosition) {
+      next[id].position = position;
+    }
   });
 
   return next;
@@ -749,13 +1184,16 @@ const NodeCard = React.memo(function NodeCard({
   dragMode,
   collapsed,
   onNodeClick,
+  onPortPointerDown,
   onNodePointerDown,
   onDoubleClick,
 }) {
-  return (
-    <div
-      className={`node ${selected ? 'selected' : ''} ${dimmed ? 'dimmed' : ''} ${dragging ? 'dragging' : ''} ${dropTarget ? 'drop-target' : ''} ${dragMode ? 'drag-mode' : ''}`}
-      style={{ left: position.x, top: position.y }}
+    const healthClass = node.workload <= 4 ? 'health-low' : node.workload <= 7 ? 'health-medium' : 'health-high';
+
+    return (
+      <div
+        className={`node ${selected ? 'selected' : ''} ${dimmed ? 'dimmed' : ''} ${node.hidden ? 'hidden' : ''} ${dropTarget ? 'drop-target' : ''} ${dragMode ? 'drag-mode' : ''} ${dragging ? 'dragging' : ''} ${healthClass}`}
+        style={{ left: position.x, top: position.y }}
       onClick={(event) => {
         event.stopPropagation();
         onNodeClick(node.id);
@@ -764,8 +1202,11 @@ const NodeCard = React.memo(function NodeCard({
       onDoubleClick={(event) => onDoubleClick(event, node.id)}
       draggable={false}
     >
+      <div className="node-port top" onPointerDown={(event) => onPortPointerDown(event, node.id, 'top')} />
+      <div className="node-port bottom" onPointerDown={(event) => onPortPointerDown(event, node.id, 'bottom')} />
       {collapsed ? <div className="node-pulse" /> : null}
       <div className="avatar-shell">
+        <div className={`avatar-halo ${node.presence || 'offline'}`} />
         <div className="avatar">
           {node.name
             .split(' ')
@@ -774,6 +1215,9 @@ const NodeCard = React.memo(function NodeCard({
             .slice(0, 2)
             .toUpperCase()}
         </div>
+        {collapsed && node.hiddenCount > 0 && (
+          <div className="collapse-indicator">+{node.hiddenCount}</div>
+        )}
       </div>
       <div className="meta">
         <div className="name">{node.name}</div>
@@ -800,17 +1244,77 @@ const Dashboard = ({ onLogout }) => {
   const [theme, setTheme] = useState(() => (document.documentElement.classList.contains('dark') ? 'dark' : 'light'));
   const [graph, setGraph] = useState(() => layoutGraph(INITIAL_GRAPH));
   const [expandedIds, setExpandedIds] = useState(() => new Set(['JP', 'AK', 'SR']));
-  const [selectedNodeId, setSelectedNodeId] = useState('JP');
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [selectedBranchId, setSelectedBranchId] = useState(null);
   const [selectedDomain, setSelectedDomain] = useState(null);
   const [viewport, setViewport] = useState({ x: 90, y: 88, scale: 1 });
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
   const [panning, setPanning] = useState(null);
-  const [dragBranch, setDragBranch] = useState(null);
+  const [dragConnection, setDragConnection] = useState(null);
   const [dragNode, setDragNode] = useState(null);
-  const [assignmentDraft, setAssignmentDraft] = useState(null);
+  const [pendingAssignment, setPendingAssignment] = useState(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [taskForm, setTaskForm] = useState({ name: '', priority: 'Normal' });
   const [toast, setToast] = useState('');
   const [history, setHistory] = useState({ past: [], future: [] });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeComment, setActiveComment] = useState('');
+  const [notifOpen, setNotifOpen] = useState(false);
+
+  const centerOnNode = useCallback((nodeId) => {
+    const pos = graph[nodeId]?.position;
+    if (!pos || !stageRef.current) return;
+    
+    const rect = stageRef.current.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    const nextScale = 1;
+    const x = centerX - pos.x * nextScale - (NODE_W / 2) * nextScale;
+    const y = centerY - pos.y * nextScale - (NODE_H / 2) * nextScale;
+
+    setViewport({ x, y, scale: nextScale });
+    setSelectedNodeId(nodeId);
+    setSearchQuery('');
+  }, [graph]);
+
+  const updateTaskStatus = (nodeId, taskId, newStatus) => {
+    setGraph((prev) => {
+      const next = { ...prev };
+      const node = { ...next[nodeId] };
+      node.tasks = node.tasks.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t));
+      next[nodeId] = node;
+      return next;
+    });
+    setToast(`Task status updated to ${newStatus}`);
+    
+    // Auto-log status change to comments
+    addComment(nodeId, `Updated task to ${newStatus}`);
+    
+    setTimeout(() => setToast(''), 3000);
+  };
+
+  const addComment = (nodeId, text) => {
+    if (!text.trim()) return;
+    setGraph(prev => {
+      const next = { ...prev };
+      const node = { ...next[nodeId] };
+      if (!node.comments) node.comments = [];
+      node.comments = [
+        {
+          id: Date.now(),
+          author: user?.name || 'Admin',
+          text: text,
+          time: 'Just now',
+          avatar: (user?.name || 'A')[0].toUpperCase()
+        },
+        ...node.comments
+      ];
+      next[nodeId] = node;
+      return next;
+    });
+    setActiveComment('');
+  };
 
   const stageRef = useRef(null);
   const initializedRef = useRef(false);
@@ -895,121 +1399,61 @@ const Dashboard = ({ onLogout }) => {
 
   const highlightSet = selectedDomain ? domainSet : focusSet;
 
-  const branchIds = useMemo(() => {
-    if (!dragBranch) {
-      return new Set();
-    }
-    return new Set([dragBranch.rootId, ...(descendantsMap.get(dragBranch.rootId) || new Set())]);
-  }, [descendantsMap, dragBranch]);
-
-  const activeDrag = dragBranch || dragNode;
-  const activeDragIds = useMemo(() => {
-    if (dragBranch) {
-      return new Set([dragBranch.rootId, ...(descendantsMap.get(dragBranch.rootId) || new Set())]);
-    }
-    if (dragNode) {
-      return new Set([dragNode.nodeId]);
-    }
-    return new Set();
-  }, [descendantsMap, dragBranch, dragNode]);
-
   const renderPositions = useMemo(() => {
     const map = Object.fromEntries(Object.entries(graph).map(([id, node]) => [id, { ...node.position }]));
-    if (!activeDrag) {
-      return map;
-    }
-
-    if (dragBranch) {
-      const rootPos = graph[dragBranch.rootId]?.position;
-      if (!rootPos) {
-        return map;
-      }
-      const topLeft = {
-        x: dragBranch.pointerWorld.x - dragBranch.offsetX,
-        y: dragBranch.pointerWorld.y - dragBranch.offsetY,
-      };
-      const delta = { x: topLeft.x - rootPos.x, y: topLeft.y - rootPos.y };
-      branchIds.forEach((id) => {
-        const base = graph[id]?.position;
-        if (!base) {
-          return;
-        }
-        map[id] = { x: base.x + delta.x, y: base.y + delta.y };
-      });
-      return map;
-    }
-
     if (dragNode) {
       const base = graph[dragNode.nodeId]?.position;
-      if (!base) {
-        return map;
+      if (base) {
+        map[dragNode.nodeId] = {
+          x: dragNode.pointerWorld.x - dragNode.offsetX,
+          y: dragNode.pointerWorld.y - dragNode.offsetY,
+        };
       }
-      map[dragNode.nodeId] = {
-        x: dragNode.pointerWorld.x - dragNode.offsetX,
-        y: dragNode.pointerWorld.y - dragNode.offsetY,
-      };
     }
-
     return map;
-  }, [activeDrag, branchIds, dragBranch, dragNode, graph]);
+  }, [dragNode, graph]);
 
   const nearestTargetId = useMemo(() => {
-    if (!activeDrag) {
+    if (!dragConnection) {
       return null;
     }
-    const invalid = new Set(activeDragIds);
-    const pointer = dragBranch ? dragBranch.pointerWorld : dragNode.pointerWorld;
+    const pointer = dragConnection.pointerWorld;
     let nearest = null;
     let nearestDistance = Number.POSITIVE_INFINITY;
     Object.entries(renderPositions).forEach(([id, pos]) => {
-      if (invalid.has(id)) {
+      if (id === dragConnection.nodeId) {
         return;
       }
-      const topPort = { x: pos.x + NODE_W / 2, y: pos.y };
-      const dist = Math.hypot(topPort.x - pointer.x, topPort.y - pointer.y);
+      
+      let targetPort;
+      if (dragConnection.port === 'bottom') {
+        targetPort = { x: pos.x + NODE_W / 2, y: pos.y };
+      } else {
+        targetPort = { x: pos.x + NODE_W / 2, y: pos.y + NODE_H };
+      }
+
+      const dist = Math.hypot(targetPort.x - pointer.x, targetPort.y - pointer.y);
       if (dist < nearestDistance) {
         nearestDistance = dist;
         nearest = id;
       }
     });
     return nearest && nearestDistance <= SNAP_RADIUS ? nearest : null;
-  }, [activeDrag, activeDragIds, dragBranch, dragNode, renderPositions]);
-
-  const branchBounds = useMemo(() => {
-    const bounds = {};
-    Object.keys(graph).forEach((id) => {
-      const ids = [id, ...(descendantsMap.get(id) || [])];
-      const points = ids.map((nodeId) => renderPositions[nodeId]).filter(Boolean);
-      if (!points.length) {
-        return;
-      }
-      const minX = Math.min(...points.map((point) => point.x));
-      const maxX = Math.max(...points.map((point) => point.x + NODE_W));
-      const minY = Math.min(...points.map((point) => point.y + NODE_H * 0.55));
-      const maxY = Math.max(...points.map((point) => point.y + NODE_H));
-      bounds[id] = {
-        x: minX - 12,
-        y: minY,
-        width: Math.max(34, maxX - minX + 24),
-        height: Math.max(42, maxY - minY + 34),
-      };
-    });
-    return bounds;
-  }, [descendantsMap, graph, renderPositions]);
+  }, [dragConnection, renderPositions]);
 
   const graphTransform = `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`;
 
-  const commitGraph = useCallback((mutate, message) => {
+  const commitGraph = useCallback((mutate, message, shouldLayout = true) => {
     setGraph((prev) => {
       const before = cloneGraph(prev);
       const draft = cloneGraph(prev);
       mutate(draft);
-      const reflowed = layoutGraph(draft);
+      const result = shouldLayout ? layoutGraph(draft) : draft;
       setHistory((h) => ({ past: [...h.past, before].slice(-30), future: [] }));
       if (message) {
         setToast(message);
       }
-      return reflowed;
+      return result;
     });
   }, []);
 
@@ -1033,32 +1477,19 @@ const Dashboard = ({ onLogout }) => {
     initializedRef.current = true;
   }, [graphBounds, stageSize.height, stageSize.width]);
 
-  const centerOnNode = useCallback((nodeId) => {
-    const pos = renderPositions[nodeId];
-    if (!pos || !stageSize.width || !stageSize.height) {
-      return;
-    }
-    const center = getNodeCenter(pos);
-    setViewport((prev) => ({
-      ...prev,
-      x: stageSize.width / 2 - center.x * prev.scale,
-      y: Math.max(24, stageSize.height / 2 - center.y * prev.scale),
-    }));
-  }, [renderPositions, stageSize.height, stageSize.width]);
 
   useEffect(() => {
     const handleMove = (event) => {
-      if (dragBranch && stageRef.current) {
+      if (dragConnection && stageRef.current) {
         const rect = stageRef.current.getBoundingClientRect();
         const pointerWorld = screenToWorld({ x: event.clientX - rect.left, y: event.clientY - rect.top }, viewport);
-        const moved = Math.hypot(event.clientX - dragBranch.startClientX, event.clientY - dragBranch.startClientY) > DRAG_START_THRESHOLD_PX;
-        setDragBranch((current) => (current ? { ...current, pointerWorld, moved } : current));
+        setDragConnection((current) => (current ? { ...current, pointerWorld } : current));
       }
 
       if (dragNode && stageRef.current) {
         const rect = stageRef.current.getBoundingClientRect();
         const pointerWorld = screenToWorld({ x: event.clientX - rect.left, y: event.clientY - rect.top }, viewport);
-        const moved = Math.hypot(event.clientX - dragNode.startClientX, event.clientY - dragNode.startClientY) > DRAG_START_THRESHOLD_PX;
+        const moved = Math.hypot(event.clientX - dragNode.startClientX, event.clientY - dragNode.startClientY) > 3;
         setDragNode((current) => (current ? { ...current, pointerWorld, moved } : current));
       }
 
@@ -1070,39 +1501,48 @@ const Dashboard = ({ onLogout }) => {
     };
 
     const handleUp = () => {
-      if (dragBranch) {
-        const moved = dragBranch.moved;
-        const sourceId = dragBranch.rootId;
-        const targetId = nearestTargetId;
-        const originalParent = dragBranch.originalParent;
-
-        setDragBranch(null);
-
-        if (moved && targetId) {
-          commitGraph((draft) => {
-            draft[sourceId].parentId = targetId;
-          }, `Branch moved: ${graph[sourceId]?.name} now reports to ${graph[targetId]?.name}.`);
-          setAssignmentDraft({ fromId: sourceId, toId: targetId, taskTitle: '', priority: 'medium', notes: '', originalParent });
-          setSelectedNodeId(sourceId);
-          setSelectedBranchId(sourceId);
-        }
-      }
-
       if (dragNode) {
         const moved = dragNode.moved;
         const sourceId = dragNode.nodeId;
-        const targetId = nearestTargetId;
-        const originalParent = dragNode.originalParent;
-
         setDragNode(null);
-
-        if (moved && targetId) {
+        if (moved) {
+          const newPos = {
+            x: dragNode.pointerWorld.x - dragNode.offsetX,
+            y: dragNode.pointerWorld.y - dragNode.offsetY,
+          };
           commitGraph((draft) => {
-            draft[sourceId].parentId = targetId;
-          }, `Node moved: ${graph[sourceId]?.name} now reports to ${graph[targetId]?.name}.`);
-          setAssignmentDraft({ fromId: sourceId, toId: targetId, taskTitle: '', priority: 'medium', notes: '', originalParent });
-          setSelectedNodeId(sourceId);
-          setSelectedBranchId(null);
+            if (draft[sourceId]) {
+              draft[sourceId].position = newPos;
+              draft[sourceId].manualPosition = true;
+            }
+          }, null, false);
+        }
+      }
+
+      if (dragConnection) {
+        const sourceId = dragConnection.nodeId;
+        const targetId = nearestTargetId;
+        const port = dragConnection.port;
+        const originalParent = dragConnection.originalParent;
+
+        setDragConnection(null);
+
+        if (targetId) {
+          // Prevent cycle checks and direct parent reassignment
+          let newChild = targetId;
+          let newParent = sourceId;
+
+          if (port === 'top') {
+            newChild = sourceId;
+            newParent = targetId;
+          }
+
+          setPendingAssignment({ 
+            fromId: newChild, 
+            toId: newParent 
+          });
+          setIsTaskModalOpen(true);
+          setTaskForm({ name: '', priority: 'Normal' });
         }
       }
 
@@ -1117,52 +1557,19 @@ const Dashboard = ({ onLogout }) => {
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
     };
-  }, [commitGraph, dragBranch, dragNode, graph, nearestTargetId, panning, viewport.scale]);
+  }, [commitGraph, dragConnection, dragNode, graph, nearestTargetId, panning, viewport]);
 
   const handleCanvasPointerDown = useCallback((event) => {
-    if (event.button !== 0 || event.target !== event.currentTarget || dragBranch || dragNode) {
+    if (event.button !== 0 || dragConnection || dragNode) {
       return;
     }
     setSelectedNodeId(null);
     setSelectedBranchId(null);
     setPanning({ startX: event.clientX, startY: event.clientY, originX: viewport.x, originY: viewport.y });
-  }, [dragBranch, dragNode, viewport.x, viewport.y]);
+  }, [dragConnection, dragNode, viewport]);
 
-  const handleBranchPointerDown = useCallback((event, rootId) => {
-    if (!stageRef.current || dragNode) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-
-    const pos = renderPositions[rootId];
-    if (!pos) {
-      return;
-    }
-
-    const rect = stageRef.current.getBoundingClientRect();
-    const pointerWorld = screenToWorld({ x: event.clientX - rect.left, y: event.clientY - rect.top }, viewport);
-
-    if (event.currentTarget?.setPointerCapture) {
-      event.currentTarget.setPointerCapture(event.pointerId);
-    }
-
-    setSelectedBranchId(rootId);
-    setDragBranch({
-      rootId,
-      startPointer: pointerWorld,
-      startClientX: event.clientX,
-      startClientY: event.clientY,
-      pointerWorld,
-      offsetX: pointerWorld.x - pos.x,
-      offsetY: pointerWorld.y - pos.y,
-      originalParent: graph[rootId].parentId,
-      moved: false,
-    });
-  }, [dragNode, graph, renderPositions, viewport]);
-
-  const handleNodePointerDown = useCallback((event, nodeId) => {
-    if (!stageRef.current || event.button !== 0 || dragBranch) {
+  const handlePortPointerDown = useCallback((event, nodeId, port) => {
+    if (!stageRef.current || event.button !== 0) {
       return;
     }
     event.preventDefault();
@@ -1180,6 +1587,28 @@ const Dashboard = ({ onLogout }) => {
       event.currentTarget.setPointerCapture(event.pointerId);
     }
 
+    setDragConnection({
+      nodeId,
+      port,
+      startPointer: pointerWorld,
+      pointerWorld,
+      originalParent: graph[nodeId].parentId,
+    });
+  }, [graph, renderPositions, viewport]);
+
+  const handleNodePointerDown = useCallback((event, nodeId) => {
+    if (!stageRef.current || event.button !== 0 || dragConnection) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    const pos = renderPositions[nodeId];
+    if (!pos) return;
+    const rect = stageRef.current.getBoundingClientRect();
+    const pointerWorld = screenToWorld({ x: event.clientX - rect.left, y: event.clientY - rect.top }, viewport);
+    if (event.currentTarget?.setPointerCapture) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
     setSelectedNodeId(nodeId);
     setSelectedBranchId(null);
     setDragNode({
@@ -1190,10 +1619,9 @@ const Dashboard = ({ onLogout }) => {
       pointerWorld,
       offsetX: pointerWorld.x - pos.x,
       offsetY: pointerWorld.y - pos.y,
-      originalParent: graph[nodeId].parentId,
       moved: false,
     });
-  }, [dragBranch, graph, renderPositions, viewport]);
+  }, [dragConnection, renderPositions, viewport]);
 
   const handleNodeClick = useCallback((nodeId) => {
     setSelectedNodeId(nodeId);
@@ -1263,24 +1691,35 @@ const Dashboard = ({ onLogout }) => {
   }, [graph]);
 
   const saveAssignment = useCallback(() => {
-    if (!assignmentDraft) {
-      return;
-    }
+    if (!pendingAssignment) return;
+    
     commitGraph((draft) => {
-      draft[assignmentDraft.fromId].parentId = assignmentDraft.toId;
-    }, `Connected ${graph[assignmentDraft.fromId]?.name} to ${graph[assignmentDraft.toId]?.name}.`);
-    setAssignmentDraft(null);
-    setSelectedNodeId(assignmentDraft.fromId);
-  }, [assignmentDraft, commitGraph, graph]);
+      const { fromId, toId } = pendingAssignment;
+      if (draft[fromId]) {
+        draft[fromId].parentId = toId;
+        if (!draft[fromId].tasks) draft[fromId].tasks = [];
+        
+        draft[fromId].tasks.push({
+          id: Date.now(),
+          title: taskForm.name || 'New Mission',
+          status: 'To Do',
+          priority: taskForm.priority,
+          start: 20,
+          duration: 30,
+          progress: 0
+        });
+      }
+    }, `Assigned ${taskForm.name} to ${graph[pendingAssignment.fromId]?.name}`);
+    
+    setPendingAssignment(null);
+    setIsTaskModalOpen(false);
+    setSelectedNodeId(pendingAssignment.fromId);
+  }, [pendingAssignment, taskForm, commitGraph, graph]);
 
   const cancelAssignment = useCallback(() => {
-    if (assignmentDraft?.originalParent !== undefined) {
-      commitGraph((draft) => {
-        draft[assignmentDraft.fromId].parentId = assignmentDraft.originalParent;
-      });
-    }
-    setAssignmentDraft(null);
-  }, [assignmentDraft, commitGraph]);
+    setPendingAssignment(null);
+    setIsTaskModalOpen(false);
+  }, []);
 
   const toggleCollapse = useCallback((nodeId) => {
     commitGraph((draft) => {
@@ -1359,9 +1798,170 @@ const Dashboard = ({ onLogout }) => {
 
   const visibleIds = Object.keys(graph);
 
+  const clusters = useMemo(() => {
+    const teamMap = {};
+    Object.keys(graph).forEach(id => {
+      const node = graph[id];
+      const pos = renderPositions[id];
+      if (!pos || node.hidden) return;
+      
+      const team = node.team || 'General';
+      if (!teamMap[team]) {
+        teamMap[team] = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity, count: 0 };
+      }
+      const t = teamMap[team];
+      t.minX = Math.min(t.minX, pos.x);
+      t.minY = Math.min(t.minY, pos.y);
+      t.maxX = Math.max(t.maxX, pos.x + NODE_W);
+      t.maxY = Math.max(t.maxY, pos.y + NODE_H);
+      t.count++;
+    });
+
+    return Object.entries(teamMap)
+      .filter(([_, t]) => t.count > 1) 
+      .map(([team, t]) => ({
+        team,
+        x: t.minX - 40,
+        y: t.minY - 40,
+        w: (t.maxX - t.minX) + 80,
+        h: (t.maxY - t.minY) + 80
+      }));
+  }, [graph, renderPositions, expandedIds]);
+
+
   return (
-    <div className="org-editor" data-theme={theme}>
+    <div className="org-editor" data-theme={theme} style={{ position: 'relative' }}>
       <style>{STYLES}</style>
+
+      {isTaskModalOpen && pendingAssignment ? (
+        <div 
+          className="modal-overlay" 
+          onPointerDown={(event) => event.stopPropagation()} 
+          onWheel={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(0,0,0,0.2)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 99999,
+          }}
+        >
+          <section
+            className="modal-card"
+            style={{
+              width: 420,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 16,
+              padding: 32,
+              boxShadow: '0 24px 48px rgba(0,0,0,0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+              pointerEvents: 'auto',
+              animation: 'modalScaleUp 240ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+            }}
+          >
+            <div style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: 8, color: 'var(--text)' }}>
+              New Task Assignment
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-2)', marginBottom: 24 }}>
+              Establishing link: <b>{graph[pendingAssignment.fromId]?.name}</b> → <b>{graph[pendingAssignment.toId]?.name}</b>
+            </div>
+
+            
+            {(taskForm.name.length > 2 && graph[pendingAssignment.toId]?.skills) && (
+              <div style={{ marginTop: -8, marginBottom: 12 }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-2)', marginBottom: 6 }}>Potential Expertise Match:</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                  {graph[pendingAssignment.toId].skills.map(skill => {
+                    const isMatch = taskForm.name.toLowerCase().includes(skill.toLowerCase());
+                    return (
+                      <span key={skill} className="skill-tag" style={{ 
+                        opacity: isMatch ? 1 : 0.4, 
+                        borderColor: isMatch ? 'var(--accent)' : 'var(--border)',
+                        background: isMatch ? 'color-mix(in srgb, var(--accent) 15%, var(--soft))' : 'var(--soft)'
+                      }}>
+                        {skill} {isMatch && '✓'}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+<div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-2)' }}>
+                Task Name
+                <input
+                  style={{
+                    width: '100%',
+                    background: 'var(--soft)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    padding: '10px 14px',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  placeholder="Task description..."
+                  value={taskForm.name}
+                  onChange={(e) => setTaskForm(prev => ({ ...prev, name: e.target.value }))}
+                  autoFocus
+                />
+              </label>
+
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-2)' }}>
+                Priority
+                <select
+                  style={{
+                    width: '100%',
+                    background: 'var(--soft)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    padding: '10px 14px',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  value={taskForm.priority}
+                  onChange={(e) => setTaskForm(prev => ({ ...prev, priority: e.target.value }))}
+                >
+                  <option value="Low">Low</option>
+                  <option value="Normal">Normal</option>
+                  <option value="High">High</option>
+                  <option value="Critical">Critical</option>
+                </select>
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <button 
+                type="button" 
+                className="org-btn-ghost" 
+                onClick={cancelAssignment}
+                style={{ padding: '8px 16px', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600 }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="org-btn" 
+                onClick={saveAssignment}
+                style={{ padding: '8px 20px', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, background: 'var(--accent)', color: 'white', border: 'none' }}
+              >
+                Save Assignment
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       <div className="org-shell">
         <header className="org-topbar">
@@ -1370,6 +1970,29 @@ const Dashboard = ({ onLogout }) => {
             <div className="org-brand-sub">Organization Flow Editor</div>
           </div>
           <div className="org-actions">
+            <div className="notif-bell" onClick={() => setNotifOpen(!notifOpen)} style={{ cursor: 'pointer', position: 'relative' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <div className="notif-dot" />
+              {notifOpen && (
+                <div className="notif-dropdown" style={{ 
+                  position: 'absolute', top: '100%', right: 0, width: 220, 
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRadius: 8, padding: 12, boxShadow: 'var(--shadow-strong)',
+                  zIndex: 1000, marginTop: 12
+                }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, marginBottom: 8 }}>Recent Activity</div>
+                  {history.past.slice(-3).reverse().map((h, i) => (
+                    <div key={i} style={{ fontSize: '0.65rem', padding: '6px 0', borderBottom: i < 2 ? '1px solid var(--border)' : 'none', color: 'var(--text-2)' }}>
+                      {h.message || 'System update'}
+                    </div>
+                  ))}
+                  {history.past.length === 0 && <div style={{ fontSize: '0.65rem', color: 'var(--text-2)' }}>No new alerts</div>}
+                </div>
+              )}
+            </div>
             <button type="button" className="org-icon-btn" onClick={toggleTheme} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
               {theme === 'dark' ? '☀' : '☾'}
             </button>
@@ -1393,50 +2016,56 @@ const Dashboard = ({ onLogout }) => {
         </header>
 
         <div className="org-main">
-          <aside className="org-panel">
-            <div>
-              <div className="panel-title">Organization Flow</div>
-              <p className="panel-copy">Click node cards for profile details. Use branch areas to drag complete subtrees and reconnect with ports.</p>
-            </div>
-
-            <div className="stats-grid">
-              <div className="stat-card"><strong>{visibleIds.length}</strong><span>Members</span></div>
-              <div className="stat-card"><strong>{visibleIds.filter((id) => graph[id].parentId).length}</strong><span>Connected</span></div>
-              <div className="stat-card"><strong>{TEAM_PILLS.length}</strong><span>Teams</span></div>
-            </div>
-
-            <div className="pill-wrap">
-              {TEAM_PILLS.map((team) => (
-                <button
-                  key={team}
-                  type="button"
-                  className={`team-pill ${selectedDomain === team ? 'active' : ''}`}
-                  onClick={() => setSelectedDomain((prev) => (prev === team ? null : team))}
-                >
-                  {team}
-                </button>
-              ))}
-            </div>
-
-            <div className="panel-actions">
-              <button type="button" className="org-btn" onClick={() => centerOnNode('JP')}>See My Node</button>
-              <button type="button" className="org-btn-ghost" onClick={collapseAll}>Collapse All</button>
-              <button type="button" className="org-btn-ghost" onClick={expandTopTeams}>Focus Team</button>
-            </div>
-          </aside>
-
           <section className="canvas-wrap">
+            <div className="search-container">
+              <div className="search-input-wrapper">
+                <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input 
+                  type="text" 
+                  className="search-input" 
+                  placeholder="Search team members..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              {searchQuery.length >= 1 && (
+                <div className="search-results">
+                  {Object.values(graph)
+                    .filter(node => 
+                      node.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                      node.team.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map(node => (
+                      <div 
+                        key={node.id} 
+                        className="search-result-item"
+                        onClick={() => centerOnNode(node.id)}
+                      >
+                        <div style={{ fontWeight: 600 }}>{node.name}</div>
+                        <div className="meta">{node.team} • {node.role}</div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
             <div ref={stageRef} className="canvas" onPointerDown={handleCanvasPointerDown} onWheel={handleWheel}>
               <div className="world" style={{ transform: graphTransform }}>
+                {clusters.map((c) => (
+                  <div 
+                    key={c.team} 
+                    className="department-cluster" 
+                    style={{ left: c.x, top: c.y, width: c.w, height: c.h }}
+                  >
+                    <div className="cluster-label">{c.team} Department</div>
+                  </div>
+                ))}
+
                 <svg className="edge-layer" width={WORLD_W} height={WORLD_H} viewBox={`0 0 ${WORLD_W} ${WORLD_H}`}>
                   {Object.values(graph).map((node) => {
                     if (!node.parentId) {
-                      return null;
-                    }
-                    if (dragBranch && node.id === dragBranch.rootId) {
-                      return null;
-                    }
-                    if (dragNode && node.id === dragNode.nodeId) {
                       return null;
                     }
                     const from = renderPositions[node.parentId];
@@ -1445,37 +2074,52 @@ const Dashboard = ({ onLogout }) => {
                       return null;
                     }
                     const active = !highlightSet || (highlightSet.has(node.parentId) || highlightSet.has(node.id));
-                    return <path key={`${node.parentId}-${node.id}`} d={getBezierPath(from, to)} className={`edge ${active ? 'active' : ''}`} />;
+                    const isHiddenEdge = node.hidden || graph[node.parentId]?.hidden;
+                    const pathData = getBezierPath(from, to);
+                    return (
+                      <React.Fragment key={`${node.parentId}-${node.id}`}>
+                        <path
+                          d={pathData}
+                          className="edge"
+                          style={{ opacity: isHiddenEdge ? 0 : active ? 1 : 0.2 }}
+                        />
+                        {!isHiddenEdge && active && (
+                          <path
+                            d={pathData}
+                            className="edge-pulse"
+                          />
+                        )}
+                      </React.Fragment>
+                    );
                   })}
 
-                  {activeDrag ? (() => {
-                    const sourceId = dragBranch ? dragBranch.rootId : dragNode.nodeId;
+                  {dragConnection ? (() => {
+                    const sourceId = dragConnection.nodeId;
                     const sourcePos = renderPositions[sourceId];
                     if (!sourcePos) {
                       return null;
                     }
-                    const source = getNodeCenter(sourcePos);
-                    const target = nearestTargetId && renderPositions[nearestTargetId]
-                      ? { x: renderPositions[nearestTargetId].x + NODE_W / 2, y: renderPositions[nearestTargetId].y }
-                      : (dragBranch ? dragBranch.pointerWorld : dragNode.pointerWorld);
-                    const midY = (source.y + target.y) / 2;
+                    
+                    let sourceX = sourcePos.x + NODE_W / 2;
+                    let sourceY = dragConnection.port === 'top' ? sourcePos.y : sourcePos.y + NODE_H;
+                    let targetX = dragConnection.pointerWorld.x;
+                    let targetY = dragConnection.pointerWorld.y;
+
+                    if (nearestTargetId && renderPositions[nearestTargetId]) {
+                      const pos = renderPositions[nearestTargetId];
+                      targetX = pos.x + NODE_W / 2;
+                      targetY = dragConnection.port === 'bottom' ? pos.y : pos.y + NODE_H;
+                    }
+                    
+                    const midY = (sourceY + targetY) / 2;
                     return (
                       <path
                         className="edge preview"
-                        d={`M ${source.x} ${source.y + NODE_H / 2} C ${source.x} ${midY}, ${target.x} ${midY}, ${target.x} ${target.y}`}
+                        d={`M ${sourceX} ${sourceY} C ${sourceX} ${midY}, ${targetX} ${midY}, ${targetX} ${targetY}`}
                       />
                     );
                   })() : null}
                 </svg>
-
-                {Object.entries(branchBounds).map(([id, bounds]) => (
-                  <div
-                    key={`branch-${id}`}
-                    className={`branch-hit ${selectedBranchId === id ? 'selected' : ''}`}
-                    style={{ left: bounds.x, top: bounds.y, width: bounds.width, height: bounds.height, pointerEvents: dragNode ? 'none' : 'auto' }}
-                    onPointerDown={(event) => handleBranchPointerDown(event, id)}
-                  />
-                ))}
 
                 {visibleIds.map((id) => {
                   const node = graph[id];
@@ -1485,9 +2129,9 @@ const Dashboard = ({ onLogout }) => {
                   }
                   const selected = selectedNodeId === id;
                   const dimmed = highlightSet ? !highlightSet.has(id) : false;
-                  const dragging = activeDrag ? activeDragIds.has(id) : false;
-                  const dropTarget = activeDrag && nearestTargetId === id;
+                  const dropTarget = dragConnection && nearestTargetId === id;
                   const collapsed = !expandedIds.has(id) && (childrenMap.get(id) || []).length > 0;
+                  const dragging = dragNode && dragNode.nodeId === id;
                   return (
                     <NodeCard
                       key={id}
@@ -1497,53 +2141,172 @@ const Dashboard = ({ onLogout }) => {
                       dimmed={dimmed}
                       dragging={dragging}
                       dropTarget={Boolean(dropTarget)}
-                      dragMode={Boolean(activeDrag)}
+                      dragMode={Boolean(dragConnection)}
                       collapsed={collapsed}
                       onNodeClick={handleNodeClick}
+                      onPortPointerDown={handlePortPointerDown}
                       onNodePointerDown={handleNodePointerDown}
                       onDoubleClick={handleNodeDoubleClick}
                     />
                   );
                 })}
 
-                {activeDrag && nearestTargetId ? (
+                {dragConnection && nearestTargetId ? (
                   <div className="drag-hint" style={{ left: renderPositions[nearestTargetId].x + NODE_W / 2 - 52, top: renderPositions[nearestTargetId].y - 24 }}>
                     Attach here
                   </div>
                 ) : null}
               </div>
 
-              {selectedNode ? (
-                <aside className="detail-panel" onPointerDown={(event) => event.stopPropagation()}>
-                  <div className="detail-head">
-                    <div>
-                      <div className="detail-name">{selectedNode.name}</div>
-                      <div className="detail-sub">{selectedNode.status}</div>
+              {selectedNodeId && selectedNode ? (
+                <aside 
+                  className="detail-panel" 
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onWheel={(event) => event.stopPropagation()}
+                >
+                  <div className="detail-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+                    <div className="detail-name" style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text)' }}>{selectedNode.name}</div>
+                    <button 
+                      type="button" 
+                      className="org-icon-btn" 
+                      onClick={() => setSelectedNodeId(null)} 
+                      style={{ width: 28, height: 28, fontSize: '1.2rem', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: -2 }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="detail-sub">{selectedNode.status}</div>
+
+                  <div className="capacity-bin">
+                    <div className="capacity-label">
+                      <span>Workload Capacity</span>
+                      <span>{selectedNode.workload * 10}%</span>
                     </div>
-                    <button type="button" className="org-icon-btn" onClick={() => setSelectedNodeId(null)} aria-label="Close profile panel">×</button>
+                    <div className="capacity-track">
+                      <div className="capacity-fill" style={{ width: `${selectedNode.workload * 10}%` }} />
+                    </div>
                   </div>
 
                   <div className="detail-pills">
                     <span className="detail-pill">Role <strong>{selectedNode.role}</strong></span>
                     <span className="detail-pill">Team <strong>{selectedNode.team}</strong></span>
                     <span className="detail-pill">Reports to <strong>{selectedAncestor?.name || 'No manager'}</strong></span>
-                    <span className="detail-pill">Workload <strong>{selectedNode.workload}/10</strong></span>
                   </div>
 
-                  <div className="detail-actions">
+                  <div className="task-list">
+                    <div className="detail-sub" style={{ marginBottom: 12, fontWeight: 700, color: 'var(--text)' }}>
+                      Current Tasks ({selectedNode.tasks?.length || 0})
+                    </div>
+                    {selectedNode.tasks && selectedNode.tasks.length > 0 ? (
+                      selectedNode.tasks.map((task) => {
+                        const userRole = user?.role || 'Admin';
+                        const isAuthorized = userRole === 'Admin' || userRole === 'Lead';
+
+                        return (
+                          <React.Fragment key={task.id}>
+                            <div className="task-item" style={{ marginBottom: 4 }}>
+                              <div className="task-info">
+                                <div className="task-title" style={{ fontSize: '0.8rem', fontWeight: 600 }}>{task.title}</div>
+                              </div>
+                              <div className={`task-status-pill ${isAuthorized ? 'editable' : ''}`}>
+                                {isAuthorized ? (
+                                  <select 
+                                    className="status-select"
+                                    value={task.status}
+                                    onChange={(e) => updateTaskStatus(selectedNodeId, task.id, e.target.value)}
+                                  >
+                                    <option value="To Do">To Do</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Done">Done</option>
+                                  </select>
+                                ) : (
+                                  task.status
+                                )}
+                              </div>
+                            </div>
+                            <div className="gantt-mini-wrap" style={{ marginBottom: 16 }}>
+                              <div className="gantt-track">
+                                <div className="gantt-bar" style={{ left: `${task.start}%`, width: `${task.duration}%` }} />
+                                <div className="gantt-progress" style={{ left: `${task.start}%`, width: `${(task.duration * (task.progress || 0)) / 100}%` }} />
+                              </div>
+                              <div className="gantt-meta">
+                                <span>Schedule</span>
+                                <span>{task.progress || 0}%</span>
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        );
+                      })
+                    ) : (
+                      <div className="detail-sub" style={{ fontSize: '0.7rem', fontStyle: 'italic', opacity: 0.6 }}>No active tasks assigned.</div>
+                    )}
+                  </div>
+
+                  <div className="detail-actions" style={{ marginTop: 24 }}>
                     <button type="button" className="org-btn-ghost" onClick={() => centerOnNode(selectedNodeId)}>Focus Node</button>
                     <button type="button" className="org-btn-ghost" onClick={() => toggleCollapse(selectedNodeId)}>{expandedIds.has(selectedNodeId) ? 'Collapse Subtree' : 'Expand Subtree'}</button>
                   </div>
-
-                  {selectedChildren.length ? (
-                    <div className="detail-list">
-                      Direct reports: <strong>{selectedChildren.map((id) => graph[id]?.name).filter(Boolean).join(', ')}</strong>
+                  <div className="comment-section">
+                    <div className="detail-sub" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>Activity Feed</div>
+                    <div className="comment-thread">
+                      {selectedNode.comments && selectedNode.comments.length > 0 ? (
+                        selectedNode.comments.map(c => (
+                          <div className="comment-item" key={c.id}>
+                            <div className="comment-avatar">{c.avatar}</div>
+                            <div className="comment-content">
+                              <div className="comment-header">
+                                <span className="comment-author">{c.author}</span>
+                                <span className="comment-time">{c.time}</span>
+                              </div>
+                              <p className="comment-text">{c.text}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="comment-item">
+                          <div className="comment-avatar">SYS</div>
+                          <div className="comment-content">
+                            <div className="comment-header">
+                              <span className="comment-author">System Bot</span>
+                              <span className="comment-time">Now</span>
+                            </div>
+                            <p className="comment-text">Waiting for activity on this node.</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  ) : null}
+                    <div className="comment-input-wrap">
+                      <input 
+                        className="comment-input" 
+                        placeholder="Type a message..." 
+                        value={activeComment}
+                        onChange={(e) => setActiveComment(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addComment(selectedNodeId, activeComment)}
+                      />
+                      <button 
+                        className="org-btn" 
+                        style={{ padding: '4px 12px', fontSize: '0.65rem' }}
+                        onClick={() => addComment(selectedNodeId, activeComment)}
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </div>
                 </aside>
               ) : null}
 
-              <div className="zoom-pill">Wheel to zoom. Drag node cards for individual moves. Drag branch areas for subtree moves. Others stay static.</div>
+              <div className="toolbar" onPointerDown={(event) => event.stopPropagation()}>
+                <button type="button" className="toolbar-btn" onClick={() => centerOnNode('JP')} title="Locate My Profile">
+                  <svg viewBox="0 0 24 24"><path d="M12 2v2M12 20v2M2 12h2M20 12h2" /><circle cx="12" cy="12" r="7" /></svg>
+                </button>
+                <button type="button" className="toolbar-btn" onClick={collapseAll} title="Collapse All Branches">
+                  <svg viewBox="0 0 24 24"><path d="M4 14h6v6" /><path d="M20 10h-6V4" /><path d="M14 10l7-7" /><path d="M3 21l7-7" /></svg>
+                </button>
+                <button type="button" className="toolbar-btn" onClick={expandTopTeams} title="Focus Team">
+                  <svg viewBox="0 0 24 24"><path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" /></svg>
+                </button>
+              </div>
 
               <div className="mini-map" onPointerDown={(event) => event.stopPropagation()}>
                 <div className="mini-top" />
@@ -1562,53 +2325,6 @@ const Dashboard = ({ onLogout }) => {
                   />
                 </div>
               </div>
-
-              {assignmentDraft ? (
-                <div className="modal-overlay" onPointerDown={(event) => event.stopPropagation()}>
-                  <section className="modal-card">
-                    <div className="modal-title">Assign New Task</div>
-                    <div className="modal-sub">Connected {graph[assignmentDraft.fromId]?.name} under {graph[assignmentDraft.toId]?.name}.</div>
-
-                    <div className="modal-grid">
-                      <label className="modal-label">
-                        Task title
-                        <input
-                          className="modal-input"
-                          value={assignmentDraft.taskTitle}
-                          onChange={(event) => setAssignmentDraft((prev) => (prev ? { ...prev, taskTitle: event.target.value } : prev))}
-                        />
-                      </label>
-                      <label className="modal-label">
-                        Priority
-                        <select
-                          className="modal-select"
-                          value={assignmentDraft.priority}
-                          onChange={(event) => setAssignmentDraft((prev) => (prev ? { ...prev, priority: event.target.value } : prev))}
-                        >
-                          <option value="low">Low</option>
-                          <option value="medium">Medium</option>
-                          <option value="high">High</option>
-                          <option value="urgent">Urgent</option>
-                        </select>
-                      </label>
-                      <label className="modal-label">
-                        Notes
-                        <textarea
-                          className="modal-textarea"
-                          value={assignmentDraft.notes}
-                          onChange={(event) => setAssignmentDraft((prev) => (prev ? { ...prev, notes: event.target.value } : prev))}
-                        />
-                      </label>
-                    </div>
-
-                    <div className="modal-actions">
-                      <button type="button" className="org-btn-ghost" onClick={cancelAssignment}>Cancel</button>
-                      <button type="button" className="org-btn" onClick={saveAssignment}>Save & Connect</button>
-                    </div>
-                  </section>
-                </div>
-              ) : null}
-
               {toast ? <div className="toast">{toast}</div> : null}
             </div>
           </section>
