@@ -16,15 +16,15 @@ const DRAG_START_THRESHOLD_PX = 8;
 const TOP_OFFSET = 152;
 
 const INITIAL_GRAPH = {
-  JP: { id: 'JP', name: 'admin', parentId: null, childrenIds: ['AK', 'SR', 'KP', 'DW'], position: { x: 0, y: 0 }, collapsed: false, role: 'Admin', team: 'Operations', workload: 8, status: 'Organization owner', presence: 'available', skills: ['Strategy', 'Logistics', 'Leadership'], tasks: [{ id: 1, title: 'Strategic Planning', status: 'In Progress', start: 10, duration: 60, progress: 45 }, { id: 2, title: 'Budget Approval', status: 'To Do', start: 40, duration: 30, progress: 0 }] },
-  AK: { id: 'AK', name: 'arun', parentId: 'JP', childrenIds: ['RC', 'TC'], position: { x: 0, y: 0 }, collapsed: false, role: 'Lead', team: 'Engineering', workload: 6, status: 'Managing engineering pod A', presence: 'away', skills: ['Architecture', 'Backend', 'Go'], tasks: [{ id: 3, title: 'Microservices Mesh', status: 'In Progress', start: 20, duration: 70, progress: 30 }, { id: 4, title: 'Onboarding docs', status: 'Done', start: 0, duration: 40, progress: 100 }] },
-  SR: { id: 'SR', name: 'kavi', parentId: 'JP', childrenIds: ['MN', 'ED'], position: { x: 0, y: 0 }, collapsed: false, role: 'Lead', team: 'Engineering', workload: 7, status: 'Managing engineering pod B', presence: 'offline', skills: ['React', 'UI/UX', 'Figma'], tasks: [{ id: 5, title: 'Frontend Refactor', status: 'Pending', start: 50, duration: 40, progress: 10 }] },
-  RC: { id: 'RC', name: 'sara', parentId: 'AK', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 4, status: 'Task execution', presence: 'available', skills: ['CSS', 'Unit Testing', 'Tailwind'], tasks: [{ id: 6, title: 'Component Library', status: 'To Do', start: 30, duration: 50, progress: 0 }] },
-  TC: { id: 'TC', name: 'mani', parentId: 'AK', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 3, status: 'Task execution', presence: 'available', skills: ['Automation', 'PostgreSQL', 'Python'], tasks: [{ id: 7, title: 'Unit Tests', status: 'Done', start: 0, duration: 100, progress: 100 }] },
-  MN: { id: 'MN', name: 'ravi', parentId: 'SR', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 5, status: 'Feature delivery', presence: 'away', skills: ['REST APIs', 'Spring Boot', 'Java'], tasks: [{ id: 8, title: 'API Integration', status: 'In Progress', start: 15, duration: 65, progress: 20 }] },
-  ED: { id: 'ED', name: 'vijay', parentId: 'SR', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 4, status: 'Platform support', presence: 'available', skills: ['Cloud Infrastructure', 'AWS', 'Docker'], tasks: [{ id: 9, title: 'Logging System', status: 'Pending', start: 60, duration: 30, progress: 5 }] },
-  KP: { id: 'KP', name: 'ajay', parentId: 'JP', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Operations', workload: 6, status: 'General support', presence: 'available', skills: ['Finance', 'Procurement', 'Excel'], tasks: [{ id: 10, title: 'Asset Audit', status: 'Done', start: 0, duration: 90, progress: 100 }] },
-  DW: { id: 'DW', name: 'deepa', parentId: 'JP', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Operations', workload: 6, status: 'General support', presence: 'offline', skills: ['HR', 'Event Planning', 'Compliance'], tasks: [{ id: 11, title: 'Logistics Sync', status: 'To Do', start: 70, duration: 25, progress: 0 }] },
+  JP: { id: 'JP', name: 'admin', parentId: null, childrenIds: ['AK', 'SR', 'KP', 'DW'], position: { x: 0, y: 0 }, collapsed: false, role: 'Admin', team: 'Operations', workload: 8, status: 'Organization owner', presence: 'available', skills: ['Strategy', 'Logistics', 'Leadership'], tasks: [{ id: 1, title: 'Strategic Planning', status: 'In Progress', start: 10, duration: 60, progress: 45, dueDate: '2026-05-01', attachments: [{ id: 'a1', name: '2026 Roadmap', type: 'doc', url: '#' }, { id: 'a2', name: 'Strategy Deck', type: 'design', url: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=400' }] }, { id: 2, title: 'Budget Approval', status: 'To Do', start: 40, duration: 30, progress: 0, dueDate: '2026-04-15' }] },
+  AK: { id: 'AK', name: 'arun', parentId: 'JP', childrenIds: ['RC', 'TC'], position: { x: 0, y: 0 }, collapsed: false, role: 'Lead', team: 'Engineering', workload: 6, status: 'Managing engineering pod A', presence: 'away', skills: ['Architecture', 'Backend', 'Go'], tasks: [{ id: 3, title: 'Microservices Mesh', status: 'In Progress', start: 20, duration: 70, progress: 30, dueDate: '2026-04-25' }] },
+  SR: { id: 'SR', name: 'kavi', parentId: 'JP', childrenIds: ['MN', 'ED'], position: { x: 0, y: 0 }, collapsed: false, role: 'Lead', team: 'Engineering', workload: 7, status: 'Managing engineering pod B', presence: 'offline', skills: ['React', 'UI/UX', 'Figma'], tasks: [{ id: 5, title: 'Frontend Refactor', status: 'Pending', start: 50, duration: 40, progress: 10, dueDate: '2026-05-10' }] },
+  RC: { id: 'RC', name: 'sara', parentId: 'AK', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 4, status: 'Task execution', presence: 'available', skills: ['CSS', 'Unit Testing', 'Tailwind'], tasks: [{ id: 6, title: 'Component Library', status: 'To Do', start: 30, duration: 50, progress: 0, dueDate: '2026-05-15' }] },
+  TC: { id: 'TC', name: 'mani', parentId: 'AK', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 3, status: 'Task execution', presence: 'available', skills: ['Automation', 'PostgreSQL', 'Python'], tasks: [{ id: 7, title: 'Unit Tests', status: 'Done', start: 0, duration: 100, progress: 100, dueDate: '2026-04-05' }] },
+  MN: { id: 'MN', name: 'ravi', parentId: 'SR', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 5, status: 'Feature delivery', presence: 'away', skills: ['REST APIs', 'Spring Boot', 'Java'], tasks: [{ id: 8, title: 'API Integration', status: 'In Progress', start: 15, duration: 65, progress: 20, dueDate: '2026-05-20' }] },
+  ED: { id: 'ED', name: 'vijay', parentId: 'SR', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Engineering', workload: 4, status: 'Platform support', presence: 'available', skills: ['Cloud Infrastructure', 'AWS', 'Docker'], tasks: [{ id: 9, title: 'Logging System', status: 'Pending', start: 60, duration: 30, progress: 5, dueDate: '2026-05-25' }] },
+  KP: { id: 'KP', name: 'ajay', parentId: 'JP', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Operations', workload: 6, status: 'General support', presence: 'available', skills: ['Finance', 'Procurement', 'Excel'], tasks: [{ id: 10, title: 'Asset Audit', status: 'Done', start: 0, duration: 90, progress: 100, dueDate: '2026-04-01' }] },
+  DW: { id: 'DW', name: 'deepa', parentId: 'JP', childrenIds: [], position: { x: 0, y: 0 }, collapsed: false, role: 'Employee', team: 'Operations', workload: 6, status: 'General support', presence: 'offline', skills: ['HR', 'Event Planning', 'Compliance'], tasks: [{ id: 11, title: 'Logistics Sync', status: 'To Do', start: 70, duration: 25, progress: 0, dueDate: '2026-04-18' }] },
 };
 
 const TEAM_PILLS = ['UI/UX', 'Engineering', 'Marketing', 'QA', 'Product', 'Operations'];
@@ -1017,6 +1017,138 @@ const STYLES = `
   gap: 12px;
 }
 
+.attachment-section { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+.attachment-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; }
+.attachment-card { background: var(--soft); border: 1px solid var(--border); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 6px; position: relative; transition: all 0.2s ease; cursor: pointer; }
+.attachment-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.attachment-preview { width: 100%; height: 70px; border-radius: 4px; background: var(--bg); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+.attachment-preview img { width: 100%; height: 100%; object-fit: cover; }
+.attachment-name { font-size: 0.7rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.remove-attach { position: absolute; top: -6px; right: -6px; background: #ef4444; color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; opacity: 0; transition: opacity 0.2s; z-index: 10; border: none; cursor: pointer; }
+.attachment-card:hover .remove-attach { opacity: 1; }
+.add-attach-btn { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.7rem; font-weight: 600; color: var(--accent); background: none; border: 1px dashed var(--accent); padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-top: 12px; transition: all 0.2s; width: 100%; }
+.add-attach-btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+.attach-form {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.attach-type-toggle {
+  display: flex;
+  background: var(--soft);
+  border-radius: 6px;
+  padding: 2px;
+}
+.attach-type-btn {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-2);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.attach-type-btn.active {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.attach-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.attach-input-group label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+}
+.attach-input {
+  background: var(--soft);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px;
+  font-size: 0.75rem;
+  color: var(--text);
+  outline: none;
+}
+.attach-input:focus { border-color: var(--accent); }
+
+.attachment-section { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+.attachment-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; }
+.attachment-card { background: var(--soft); border: 1px solid var(--border); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 6px; position: relative; transition: all 0.2s ease; cursor: pointer; }
+.attachment-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.attachment-preview { width: 100%; height: 70px; border-radius: 4px; background: var(--bg); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+.attachment-preview img { width: 100%; height: 100%; object-fit: cover; }
+.attachment-name { font-size: 0.7rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.remove-attach { position: absolute; top: -6px; right: -6px; background: #ef4444; color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; opacity: 0; transition: opacity 0.2s; z-index: 10; border: none; cursor: pointer; }
+.attachment-card:hover .remove-attach { opacity: 1; }
+.add-attach-btn { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.7rem; font-weight: 600; color: var(--accent); background: none; border: 1px dashed var(--accent); padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-top: 12px; transition: all 0.2s; width: 100%; }
+.add-attach-btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+.attach-form {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.attach-type-toggle {
+  display: flex;
+  background: var(--soft);
+  border-radius: 6px;
+  padding: 2px;
+}
+.attach-type-btn {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-2);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.attach-type-btn.active {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.attach-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.attach-input-group label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+}
+.attach-input {
+  background: var(--soft);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px;
+  font-size: 0.75rem;
+  color: var(--text);
+  outline: none;
+}
+.attach-input:focus { border-color: var(--accent); }
+
 .toast {
   position: absolute;
   left: 50%;
@@ -1228,6 +1360,48 @@ const NodeCard = React.memo(function NodeCard({
   );
 });
 
+const AttachmentForm = ({ onAdd, onCancel }) => {
+  const [name, setName] = useState('');
+  const [type, setType] = useState('link'); // link, image, doc
+  const [url, setUrl] = useState('');
+
+  return (
+    <div className="attach-form">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>Add Attachment</span>
+        <button className="org-icon-btn" onClick={onCancel} style={{ width: 22, height: 22 }}>×</button>
+      </div>
+      
+      <div className="attach-type-toggle">
+        <button className={`attach-type-btn ${type === 'link' ? 'active' : ''}`} onClick={() => setType('link')}>Link</button>
+        <button className={`attach-type-btn ${type === 'image' ? 'active' : ''}`} onClick={() => setType('image')}>Image</button>
+        <button className={`attach-type-btn ${type === 'doc' ? 'active' : ''}`} onClick={() => setType('doc')}>Doc</button>
+      </div>
+
+      <div className="attach-input-group">
+        <label>Display Name</label>
+        <input className="attach-input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Project Brief" />
+      </div>
+
+      <div className="attach-input-group">
+        <label>{type === 'image' ? 'Image URL' : 'Link/Path'}</label>
+        <input className="attach-input" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://..." />
+      </div>
+
+      <button 
+        className="org-btn" 
+        style={{ background: 'var(--accent)', color: 'white' }}
+        onClick={() => {
+          if (!name || !url) return;
+          onAdd(name, type, url);
+        }}
+      >
+        Confirm
+      </button>
+    </div>
+  );
+};
+
 const Dashboard = ({ onLogout }) => {
   const token = localStorage.getItem('token');
   const user = useMemo(() => {
@@ -1260,6 +1434,21 @@ const Dashboard = ({ onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeComment, setActiveComment] = useState('');
   const [notifOpen, setNotifOpen] = useState(false);
+  const [addingAttachmentForTask, setAddingAttachmentForTask] = useState(null);
+
+  const commitGraph = useCallback((mutate, message, shouldLayout = true) => {
+    setGraph((prev) => {
+      const before = cloneGraph(prev);
+      const draft = cloneGraph(prev);
+      mutate(draft);
+      const result = shouldLayout ? layoutGraph(draft) : draft;
+      setHistory((h) => ({ past: [...h.past, before].slice(-30), future: [] }));
+      if (message) {
+        setToast(message);
+      }
+      return result;
+    });
+  }, []);
 
   const centerOnNode = useCallback((nodeId) => {
     const pos = graph[nodeId]?.position;
@@ -1278,43 +1467,61 @@ const Dashboard = ({ onLogout }) => {
     setSearchQuery('');
   }, [graph]);
 
-  const updateTaskStatus = (nodeId, taskId, newStatus) => {
-    setGraph((prev) => {
-      const next = { ...prev };
-      const node = { ...next[nodeId] };
-      node.tasks = node.tasks.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t));
-      next[nodeId] = node;
-      return next;
-    });
-    setToast(`Task status updated to ${newStatus}`);
-    
-    // Auto-log status change to comments
-    addComment(nodeId, `Updated task to ${newStatus}`);
-    
-    setTimeout(() => setToast(''), 3000);
-  };
-
-  const addComment = (nodeId, text) => {
+  const addComment = useCallback((nodeId, text) => {
     if (!text.trim()) return;
-    setGraph(prev => {
-      const next = { ...prev };
-      const node = { ...next[nodeId] };
+    commitGraph((draft) => {
+      const node = draft[nodeId];
+      if (!node) return;
       if (!node.comments) node.comments = [];
-      node.comments = [
-        {
-          id: Date.now(),
-          author: user?.name || 'Admin',
-          text: text,
-          time: 'Just now',
-          avatar: (user?.name || 'A')[0].toUpperCase()
-        },
-        ...node.comments
-      ];
-      next[nodeId] = node;
-      return next;
-    });
+      node.comments.unshift({
+        id: Date.now(),
+        author: user?.name || 'Admin',
+        text: text,
+        time: 'Just now',
+        avatar: (user?.name || 'A')[0].toUpperCase()
+      });
+    }, null, false);
     setActiveComment('');
-  };
+  }, [commitGraph, user]);
+
+  const addAttachment = useCallback((nodeId, taskId, name, type, url) => {
+    commitGraph((draft) => {
+      const node = draft[nodeId];
+      if (!node) return;
+      const task = node.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      if (!task.attachments) task.attachments = [];
+      task.attachments.push({ id: Math.random().toString(36).substr(2, 9), name, type, url });
+    }, `Added ${name} to task`);
+  }, [commitGraph]);
+
+  const removeAttachment = useCallback((nodeId, taskId, attachId) => {
+    commitGraph((draft) => {
+      const node = draft[nodeId];
+      if (!node) return;
+      const task = node.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      task.attachments = task.attachments.filter(a => a.id !== attachId);
+    }, `Removed attachment`);
+  }, [commitGraph]);
+
+  const updateTaskStatus = useCallback((nodeId, taskId, newStatus) => {
+    commitGraph((draft) => {
+      const node = draft[nodeId];
+      if (!node) return;
+      node.tasks = node.tasks.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t));
+    }, `Task status -> ${newStatus}`);
+    addComment(nodeId, `Updated task to ${newStatus}`);
+  }, [commitGraph, addComment]);
+
+  const updateTaskDueDate = useCallback((nodeId, taskId, newDate) => {
+    commitGraph((draft) => {
+      const node = draft[nodeId];
+      if (!node) return;
+      node.tasks = node.tasks.map((t) => (t.id === taskId ? { ...t, dueDate: newDate } : t));
+    }, `Task due -> ${newDate}`);
+    addComment(nodeId, `Rescheduled task to ${newDate}`);
+  }, [commitGraph, addComment]);
 
   const stageRef = useRef(null);
   const initializedRef = useRef(false);
@@ -2207,25 +2414,62 @@ const Dashboard = ({ onLogout }) => {
                             <div className="task-item" style={{ marginBottom: 4 }}>
                               <div className="task-info">
                                 <div className="task-title" style={{ fontSize: '0.8rem', fontWeight: 600 }}>{task.title}</div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                                  <span style={{ fontWeight: 700 }}>Due:</span>
+                                  <input 
+                                    type="date" 
+                                    className="status-select" 
+                                    style={{ fontSize: '0.65rem', padding: 0 }}
+                                    value={task.dueDate || ''} 
+                                    onChange={(e) => updateTaskDueDate(selectedNodeId, task.id, e.target.value)}
+                                  />
+                                </div>
                               </div>
-                              <div className={`task-status-pill ${isAuthorized ? 'editable' : ''}`}>
-                                {isAuthorized ? (
-                                  <select 
-                                    className="status-select"
-                                    value={task.status}
-                                    onChange={(e) => updateTaskStatus(selectedNodeId, task.id, e.target.value)}
-                                  >
-                                    <option value="To Do">To Do</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="In Progress">In Progress</option>
-                                    <option value="Done">Done</option>
-                                  </select>
-                                ) : (
-                                  task.status
-                                )}
+                              <div className="task-status-pill editable">
+                                <select 
+                                  className="status-select"
+                                  value={task.status}
+                                  onChange={(e) => updateTaskStatus(selectedNodeId, task.id, e.target.value)}
+                                >
+                                  <option value="To Do">To Do</option>
+                                  <option value="Pending">Pending</option>
+                                  <option value="In Progress">In Progress</option>
+                                  <option value="Done">Done</option>
+                                </select>
                               </div>
                             </div>
-                            <div className="gantt-mini-wrap" style={{ marginBottom: 16 }}>
+                            
+                            {task.attachments && task.attachments.length > 0 && (
+                              <div className="attachment-grid">
+                                {task.attachments.map(att => (
+                                  <div key={att.id} className="attachment-card" onClick={() => window.open(att.url, '_blank')}>
+                                    <button className="remove-attach" onClick={(e) => { e.stopPropagation(); removeAttachment(selectedNodeId, task.id, att.id); }}>×</button>
+                                    <div className="attachment-preview">
+                                      {att.type === 'image' || att.type === 'design' ? (
+                                        <img src={att.url} alt={att.name} onError={(e) => { e.target.style.display='none'; e.target.parentElement.innerHTML = '🖼️'; }} />
+                                      ) : att.type === 'link' ? '🔗' : '📄'}
+                                    </div>
+                                    <div className="attachment-name">{att.name}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {addingAttachmentForTask === task.id ? (
+                              <AttachmentForm 
+                                onAdd={(name, type, url) => {
+                                  addAttachment(selectedNodeId, task.id, name, type, url);
+                                  setAddingAttachmentForTask(null);
+                                }}
+                                onCancel={() => setAddingAttachmentForTask(null)}
+                              />
+                            ) : (
+                              <button className="add-attach-btn" onClick={() => setAddingAttachmentForTask(task.id)}>
+                                <span>+</span> Add Link/File
+                              </button>
+                            )}
+
+                            <div className="gantt-mini-wrap" style={{ marginBottom: 16, marginTop: 12 }}>
                               <div className="gantt-track">
                                 <div className="gantt-bar" style={{ left: `${task.start}%`, width: `${task.duration}%` }} />
                                 <div className="gantt-progress" style={{ left: `${task.start}%`, width: `${(task.duration * (task.progress || 0)) / 100}%` }} />
