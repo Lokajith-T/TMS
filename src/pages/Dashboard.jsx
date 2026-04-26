@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { fetchCanvasState, saveCanvasState } from '../api/api';
 
 const NODE_W = 120;
 
@@ -526,9 +527,9 @@ const STYLES = `
 }
 
 /* Health Rings mapping */
-.node.health-low::after { border-color: #22c55e44; }
-.node.health-medium::after { border-color: #f59e0b44; }
-.node.health-high::after { border-color: #ef444444; }
+.node.health-low::after { border-color: #22c55e; box-shadow: 0 0 12px #22c55e44; }
+.node.health-medium::after { border-color: #f59e0b; box-shadow: 0 0 12px #f59e0b44; }
+.node.health-high::after { border-color: #ef4444; box-shadow: 0 0 12px #ef444444; }
 
 .node:active {
   cursor: move;
@@ -1194,6 +1195,14 @@ const getDescendants = (childrenMap, nodeId) => {
   return descendants;
 };
 
+const LANE_HEIGHT = 280;
+const getRoleLaneIndex = (role) => {
+  const r = (role || '').toLowerCase();
+  if (r === 'admin') return 0;
+  if (r === 'lead' || r === 'manager') return 1;
+  return 2;
+};
+
 const layoutGraph = (graph) => {
   const next = cloneGraph(graph);
   Object.values(next).forEach((node) => {
@@ -1239,11 +1248,14 @@ const layoutGraph = (graph) => {
   const positions = {};
 
   const place = (id, depth, startX, hiddenByParentId = null) => {
+    const roleIndex = getRoleLaneIndex(next[id].role);
+    const yPos = TOP_OFFSET + roleIndex * LANE_HEIGHT;
+
     if (hiddenByParentId) {
       if (positions[hiddenByParentId]) {
         positions[id] = { ...positions[hiddenByParentId] };
       } else {
-        positions[id] = { x: startX, y: TOP_OFFSET + depth * V_GAP };
+        positions[id] = { x: startX, y: yPos };
       }
       next[id].hidden = true;
       const actualChildren = childrenMap.get(id) || [];
@@ -1256,7 +1268,7 @@ const layoutGraph = (graph) => {
     const width = measure(id);
     positions[id] = {
       x: startX + (width - NODE_W) / 2,
-      y: TOP_OFFSET + depth * V_GAP,
+      y: yPos,
     };
     next[id].hidden = false;
 
@@ -1306,6 +1318,15 @@ const getBezierPath = (from, to) => {
   return `M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`;
 };
 
+const getPriorityWeight = (priority) => {
+  switch(priority) {
+    case 'Critical': return { stroke: '#ef4444', width: 3 };
+    case 'High': return { stroke: '#f97316', width: 2 };
+    case 'Normal': return { stroke: '#3b82f6', width: 1.5 };
+    default: return { stroke: 'var(--text-2)', width: 1 };
+  }
+};
+
 const NodeCard = React.memo(function NodeCard({
   node,
   position,
@@ -1319,6 +1340,9 @@ const NodeCard = React.memo(function NodeCard({
   onPortPointerDown,
   onNodePointerDown,
   onDoubleClick,
+  onDragOver,
+  onDrop,
+  canAssign,
 }) {
     const healthClass = node.workload <= 4 ? 'health-low' : node.workload <= 7 ? 'health-medium' : 'health-high';
 
@@ -1332,10 +1356,16 @@ const NodeCard = React.memo(function NodeCard({
       }}
       onPointerDown={(event) => onNodePointerDown(event, node.id)}
       onDoubleClick={(event) => onDoubleClick(event, node.id)}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
       draggable={false}
     >
-      <div className="node-port top" onPointerDown={(event) => onPortPointerDown(event, node.id, 'top')} />
-      <div className="node-port bottom" onPointerDown={(event) => onPortPointerDown(event, node.id, 'bottom')} />
+      {canAssign && (
+        <>
+          <div className="node-port top" onPointerDown={(event) => onPortPointerDown(event, node.id, 'top')} />
+          <div className="node-port bottom" onPointerDown={(event) => onPortPointerDown(event, node.id, 'bottom')} />
+        </>
+      )}
       {collapsed ? <div className="node-pulse" /> : null}
       <div className="avatar-shell">
         <div className={`avatar-halo ${node.presence || 'offline'}`} />
@@ -1417,6 +1447,28 @@ const Dashboard = ({ onLogout }) => {
 
   const [theme, setTheme] = useState(() => (document.documentElement.classList.contains('dark') ? 'dark' : 'light'));
   const [graph, setGraph] = useState(() => layoutGraph(INITIAL_GRAPH));
+  const saveTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchCanvasState()
+      .then(res => res.json())
+      .then(data => {
+        if (isMounted && data.graph_data && Object.keys(data.graph_data).length > 0) {
+          setGraph(layoutGraph(data.graph_data));
+        }
+      })
+      .catch(err => console.error("Failed to load canvas state", err));
+    return () => { isMounted = false; };
+  }, []);
+
+  const userNodeId = useMemo(() => {
+    if (!user || !user.name || !graph) return null;
+    return Object.keys(graph).find(id => {
+      const nodeFirstName = graph[id].name.split(' ')[0].toLowerCase();
+      return nodeFirstName === user.name.toLowerCase();
+    });
+  }, [user, graph]);
   const [expandedIds, setExpandedIds] = useState(() => new Set(['JP', 'AK', 'SR']));
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [selectedBranchId, setSelectedBranchId] = useState(null);
@@ -1446,6 +1498,12 @@ const Dashboard = ({ onLogout }) => {
       if (message) {
         setToast(message);
       }
+      
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = setTimeout(() => {
+        saveCanvasState(result).catch(err => console.error("Failed to auto-save", err));
+      }, 1000);
+      
       return result;
     });
   }, []);
@@ -1650,19 +1708,6 @@ const Dashboard = ({ onLogout }) => {
 
   const graphTransform = `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`;
 
-  const commitGraph = useCallback((mutate, message, shouldLayout = true) => {
-    setGraph((prev) => {
-      const before = cloneGraph(prev);
-      const draft = cloneGraph(prev);
-      mutate(draft);
-      const result = shouldLayout ? layoutGraph(draft) : draft;
-      setHistory((h) => ({ past: [...h.past, before].slice(-30), future: [] }));
-      if (message) {
-        setToast(message);
-      }
-      return result;
-    });
-  }, []);
 
   useEffect(() => {
     if (!toast) {
@@ -1735,21 +1780,41 @@ const Dashboard = ({ onLogout }) => {
         setDragConnection(null);
 
         if (targetId) {
-          // Prevent cycle checks and direct parent reassignment
-          let newChild = targetId;
-          let newParent = sourceId;
+          if (dragConnection.reassigningTasks) {
+            // Reassign ALL tasks from the edge to the new target
+            const taskIds = dragConnection.reassigningTasks.map(t => t.id);
+            const sourceId = dragConnection.originalTargetId;
+            const newTargetId = targetId;
 
-          if (port === 'top') {
-            newChild = sourceId;
-            newParent = targetId;
+            if (sourceId !== newTargetId) {
+              commitGraph((draft) => {
+                const sourceNode = draft[sourceId];
+                const targetNode = draft[newTargetId];
+                if (sourceNode && targetNode) {
+                  const moving = sourceNode.tasks.filter(t => taskIds.includes(t.id));
+                  sourceNode.tasks = sourceNode.tasks.filter(t => !taskIds.includes(t.id));
+                  targetNode.tasks = [...(targetNode.tasks || []), ...moving];
+                }
+              }, `Reassigned ${taskIds.length} tasks to ${graph[newTargetId]?.name}`);
+              setToast(`Reassigned tasks to ${graph[newTargetId]?.name}`);
+            }
+          } else {
+            // Prevent cycle checks and direct parent reassignment
+            let newChild = targetId;
+            let newParent = sourceId;
+
+            if (port === 'top') {
+              newChild = sourceId;
+              newParent = targetId;
+            }
+
+            setPendingAssignment({ 
+              fromId: newChild, 
+              toId: newParent 
+            });
+            setIsTaskModalOpen(true);
+            setTaskForm({ name: '', priority: 'Normal' });
           }
-
-          setPendingAssignment({ 
-            fromId: newChild, 
-            toId: newParent 
-          });
-          setIsTaskModalOpen(true);
-          setTaskForm({ name: '', priority: 'Normal' });
         }
       }
 
@@ -1852,6 +1917,39 @@ const Dashboard = ({ onLogout }) => {
     });
   }, [commitGraph]);
 
+  const handleTaskDragStart = useCallback((e, nodeId, taskId) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify({ nodeId, taskId }));
+    e.dataTransfer.effectAllowed = 'move';
+  }, []);
+
+  const handleTaskDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const handleTaskDrop = useCallback((e, targetNodeId) => {
+    e.preventDefault();
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+      if (data && data.nodeId && data.taskId && data.nodeId !== targetNodeId) {
+        commitGraph(draft => {
+          const sourceNode = draft[data.nodeId];
+          const targetNode = draft[targetNodeId];
+          if (sourceNode && targetNode) {
+            const taskIndex = sourceNode.tasks.findIndex(t => t.id === data.taskId);
+            if (taskIndex > -1) {
+              const [task] = sourceNode.tasks.splice(taskIndex, 1);
+              if (!targetNode.tasks) targetNode.tasks = [];
+              targetNode.tasks.push(task);
+            }
+          }
+        }, `Reassigned task to ${graph[targetNodeId]?.name}`);
+      }
+    } catch(err) {
+      // ignore
+    }
+  }, [commitGraph, graph]);
+
   const handleWheel = useCallback((event) => {
     event.preventDefault();
     const delta = event.deltaY > 0 ? -0.08 : 0.08;
@@ -1901,16 +1999,18 @@ const Dashboard = ({ onLogout }) => {
     if (!pendingAssignment) return;
     
     commitGraph((draft) => {
-      const { fromId, toId } = pendingAssignment;
-      if (draft[fromId]) {
-        draft[fromId].parentId = toId;
-        if (!draft[fromId].tasks) draft[fromId].tasks = [];
+      const assigneeId = pendingAssignment.fromId;
+      const assignerId = pendingAssignment.toId;
+      
+      if (draft[assigneeId]) {
+        if (!draft[assigneeId].tasks) draft[assigneeId].tasks = [];
         
-        draft[fromId].tasks.push({
+        draft[assigneeId].tasks.push({
           id: Date.now(),
           title: taskForm.name || 'New Mission',
           status: 'To Do',
           priority: taskForm.priority,
+          assignerId: assignerId,
           start: 20,
           duration: 30,
           progress: 0
@@ -2078,7 +2178,7 @@ const Dashboard = ({ onLogout }) => {
               New Task Assignment
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-2)', marginBottom: 24 }}>
-              Establishing link: <b>{graph[pendingAssignment.fromId]?.name}</b> → <b>{graph[pendingAssignment.toId]?.name}</b>
+              Establishing link: <b>{graph[pendingAssignment.toId]?.name}</b> → <b>{graph[pendingAssignment.fromId]?.name}</b>
             </div>
 
             
@@ -2260,6 +2360,39 @@ const Dashboard = ({ onLogout }) => {
             </div>
             <div ref={stageRef} className="canvas" onPointerDown={handleCanvasPointerDown} onWheel={handleWheel}>
               <div className="world" style={{ transform: graphTransform }}>
+                {['Leadership', 'Mid/Lead', 'Individual Contributors'].map((laneName, index) => (
+                  <div
+                    key={laneName}
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: TOP_OFFSET + index * LANE_HEIGHT - 60,
+                      width: WORLD_W,
+                      height: LANE_HEIGHT,
+                      borderTop: '1px dashed var(--border)',
+                      borderBottom: '1px dashed var(--border)',
+                      background: 'color-mix(in srgb, var(--surface) 30%, transparent)',
+                      pointerEvents: 'none',
+                      zIndex: 0,
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: 40,
+                        top: 12,
+                        fontSize: '1.2rem',
+                        fontWeight: 800,
+                        color: 'var(--text-2)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        opacity: 0.3,
+                      }}
+                    >
+                      {laneName}
+                    </div>
+                  </div>
+                ))}
                 {clusters.map((c) => (
                   <div 
                     key={c.team} 
@@ -2298,6 +2431,66 @@ const Dashboard = ({ onLogout }) => {
                         )}
                       </React.Fragment>
                     );
+                  })}
+                  
+                  {Object.values(graph).map((node) => {
+                    if (!node.tasks || node.tasks.length === 0) return null;
+                    
+                    const taskEdges = {};
+                    node.tasks.forEach(t => {
+                      if (t.assignerId && t.assignerId !== node.id && renderPositions[t.assignerId]) {
+                        if (!taskEdges[t.assignerId]) taskEdges[t.assignerId] = [];
+                        taskEdges[t.assignerId].push(t);
+                      }
+                    });
+
+                    return Object.entries(taskEdges).map(([assignerId, tasks]) => {
+                      const from = renderPositions[assignerId];
+                      const to = renderPositions[node.id];
+                      if (!from || !to) return null;
+                      
+                      const active = !highlightSet || (highlightSet.has(assignerId) || highlightSet.has(node.id));
+                      const isHiddenEdge = node.hidden || graph[assignerId]?.hidden;
+                      const pathData = getBezierPath(from, to);
+                      
+                      const priorities = ['Critical', 'High', 'Normal', 'Low'];
+                      const highestPriority = tasks.map(t => t.priority || 'Normal').reduce((acc, curr) => priorities.indexOf(curr) < priorities.indexOf(acc) ? curr : acc, 'Low');
+                      const weight = getPriorityWeight(highestPriority);
+                      
+                      return (
+                        <g key={`task-group-${assignerId}-${node.id}`}>
+                          <path
+                            key={`task-${assignerId}-${node.id}`}
+                            d={pathData}
+                            fill="none"
+                            stroke={weight.stroke}
+                            strokeWidth={weight.width}
+                            strokeLinecap="round"
+                            strokeDasharray="4 6"
+                            style={{ opacity: isHiddenEdge ? 0 : active ? 0.8 : 0.2 }}
+                          />
+                          {!isHiddenEdge && active && user?.role !== 'employee' && (
+                            <circle
+                              cx={to.x + NODE_W / 2}
+                              cy={to.y + NODE_H / 2}
+                              r={6}
+                              fill={weight.stroke}
+                              style={{ cursor: 'grab', pointerEvents: 'auto' }}
+                              onPointerDown={(e) => {
+                                e.stopPropagation();
+                                setDragConnection({
+                                  nodeId: assignerId,
+                                  port: 'bottom',
+                                  pointerWorld: { x: to.x + NODE_W / 2, y: to.y + NODE_H / 2 },
+                                  reassigningTasks: tasks,
+                                  originalTargetId: node.id
+                                });
+                              }}
+                            />
+                          )}
+                        </g>
+                      );
+                    });
                   })}
 
                   {dragConnection ? (() => {
@@ -2354,6 +2547,9 @@ const Dashboard = ({ onLogout }) => {
                       onPortPointerDown={handlePortPointerDown}
                       onNodePointerDown={handleNodePointerDown}
                       onDoubleClick={handleNodeDoubleClick}
+                      onDragOver={handleTaskDragOver}
+                      onDrop={(e) => handleTaskDrop(e, id)}
+                      canAssign={user?.role !== 'employee'}
                     />
                   );
                 })}
@@ -2401,8 +2597,22 @@ const Dashboard = ({ onLogout }) => {
                   </div>
 
                   <div className="task-list">
-                    <div className="detail-sub" style={{ marginBottom: 12, fontWeight: 700, color: 'var(--text)' }}>
-                      Current Tasks ({selectedNode.tasks?.length || 0})
+                    <div className="detail-sub" style={{ marginBottom: 12, fontWeight: 700, color: 'var(--text)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Current Tasks ({selectedNode.tasks?.length || 0})</span>
+                      {(user?.role !== 'employee' || selectedNodeId === userNodeId) && (
+                        <button 
+                          className="org-icon-btn" 
+                          title="Create Task"
+                          style={{ width: 24, height: 24, fontSize: '1rem' }}
+                          onClick={() => {
+                            setPendingAssignment({ fromId: selectedNodeId, toId: userNodeId || selectedNodeId });
+                            setIsTaskModalOpen(true);
+                            setTaskForm({ name: '', priority: 'Normal' });
+                          }}
+                        >
+                          +
+                        </button>
+                      )}
                     </div>
                     {selectedNode.tasks && selectedNode.tasks.length > 0 ? (
                       selectedNode.tasks.map((task) => {
@@ -2411,7 +2621,12 @@ const Dashboard = ({ onLogout }) => {
 
                         return (
                           <React.Fragment key={task.id}>
-                            <div className="task-item" style={{ marginBottom: 4 }}>
+                            <div 
+                              className="task-item" 
+                              style={{ marginBottom: 4, cursor: userRole !== 'employee' ? 'grab' : 'default' }}
+                              draggable={userRole !== 'employee'}
+                              onDragStart={(e) => userRole !== 'employee' && handleTaskDragStart(e, selectedNodeId, task.id)}
+                            >
                               <div className="task-info">
                                 <div className="task-title" style={{ fontSize: '0.8rem', fontWeight: 600 }}>{task.title}</div>
                                 <div style={{ fontSize: '0.65rem', color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>

@@ -41,7 +41,9 @@ def init_db():
             )
             db.add(new_user)
         else:
-            print(f"User {u['email']} already exists skipping.")
+            print(f"Updating user password: {u['email']}")
+            existing_user.password = hash_password(u["password"])
+            db.add(existing_user)
 
     db.commit()
     db.close()

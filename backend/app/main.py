@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import engine, Base
-from app.routers import auth
+from app.routers import auth, canvas
 from app.dependencies.auth import get_current_user
-
+from app.models.canvas import CanvasState
 # Create tables if they don't exist
 Base.metadata.create_all(bind=engine)
 
@@ -20,6 +20,7 @@ app.add_middleware(
 
 # Include Routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(canvas.router, prefix="/api/canvas", tags=["Canvas"])
 
 @app.get("/")
 def read_root():
